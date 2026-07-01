@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -12,6 +13,9 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
+  // Node.js 20 ยังไม่มี native WebSocket — supabase-js ต้องการ transport
+  // แม้ script นี้จะไม่ได้ใช้ Realtime เลยก็ตาม (constructor ต้องการ)
+  realtime: { transport: WebSocket as unknown as typeof globalThis.WebSocket },
 });
 
 const TEST_USERS = [
