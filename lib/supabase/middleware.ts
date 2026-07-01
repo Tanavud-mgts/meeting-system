@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const ROUTE_ROLES: Record<string, string[]> = {
   "/setup": ["admin"],
   "/dashboard": ["admin"],
+  "/dashboard/reports": ["approver", "admin"],
   "/approver": ["approver", "admin"],
   "/home": ["user", "approver", "admin"],
   "/booking": ["user", "approver", "admin"],
@@ -12,12 +13,18 @@ const ROUTE_ROLES: Record<string, string[]> = {
 };
 
 function matchRoute(pathname: string): string[] | null {
+  let bestMatch: { prefix: string; roles: string[] } | null = null;
+
   for (const [prefix, roles] of Object.entries(ROUTE_ROLES)) {
-    if (pathname.startsWith(prefix)) {
-      return roles;
+    if (
+      pathname.startsWith(prefix) &&
+      (!bestMatch || prefix.length > bestMatch.prefix.length)
+    ) {
+      bestMatch = { prefix, roles };
     }
   }
-  return null;
+
+  return bestMatch ? bestMatch.roles : null;
 }
 
 export async function updateSession(request: NextRequest) {

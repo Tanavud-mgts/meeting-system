@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 type NavItem = { href: string; label: string };
@@ -69,13 +70,13 @@ export default async function AppLayout({
       <aside className="hidden w-[200px] shrink-0 border-r border-neutral-200 bg-surface-card p-4 md:block">
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => (
-            <a
+            <Link
               key={item.href}
               href={item.href}
               className="rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-neutral-100"
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </aside>
@@ -84,13 +85,13 @@ export default async function AppLayout({
 
       <nav className="fixed inset-x-0 bottom-0 flex h-16 items-center justify-around border-t border-neutral-200 bg-surface-card pb-[env(safe-area-inset-bottom)] md:hidden">
         {navItems.slice(0, 4).map((item) => (
-          <a
+          <Link
             key={item.href}
             href={item.href}
             className="text-xs text-text-secondary"
           >
             {item.label}
-          </a>
+          </Link>
         ))}
       </nav>
     </div>
