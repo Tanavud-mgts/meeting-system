@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:test-users": "tsx scripts/create-test-users.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
