@@ -1,52 +1,11 @@
 -- ============================================================
 -- 014_seed_data.sql
--- ⚠️  ห้ามรันใน PRODUCTION เด็ดขาด
--- ใช้เฉพาะ Local Development (Docker) เท่านั้น
--- รันอัตโนมัติเมื่อ: supabase db reset
+-- ก่อนรันไฟล์นี้ ต้องรัน scripts/create-test-users.ts ก่อนเสมอ
+-- (สร้าง auth.users ผ่าน Supabase Admin API — INSERT ตรงเข้า
+-- auth.users ด้วย SQL ใช้ไม่ได้กับ Supabase Cloud เพราะขาด record
+-- ที่ GoTrue คาดหวังใน auth.identities และ column อื่นๆ)
+-- ใช้เฉพาะสภาพแวดล้อมทดสอบเท่านั้น ห้ามรันใน production จริง
 -- ============================================================
-
--- ============================================================
--- Auth Users (Supabase Auth layer)
--- Password ทุกคน: test1234
--- ============================================================
-INSERT INTO auth.users (
-  id, email, encrypted_password, email_confirmed_at,
-  raw_user_meta_data, created_at, updated_at,
-  aud, role
-)
-VALUES
-  (
-    '11111111-1111-1111-1111-111111111111',
-    'user@test.local',
-    crypt('test1234', gen_salt('bf')),
-    now(),
-    '{"full_name":"ทดสอบ ผู้ใช้งาน"}'::jsonb,
-    now(), now(), 'authenticated', 'authenticated'
-  ),
-  (
-    '22222222-2222-2222-2222-222222222222',
-    'admin@test.local',
-    crypt('test1234', gen_salt('bf')),
-    now(),
-    '{"full_name":"ทดสอบ ผู้ดูแลระบบ"}'::jsonb,
-    now(), now(), 'authenticated', 'authenticated'
-  ),
-  (
-    '33333333-3333-3333-3333-333333333333',
-    'approver1@test.local',
-    crypt('test1234', gen_salt('bf')),
-    now(),
-    '{"full_name":"ทดสอบ ผู้อนุมัติ 1"}'::jsonb,
-    now(), now(), 'authenticated', 'authenticated'
-  ),
-  (
-    '44444444-4444-4444-4444-444444444444',
-    'approver2@test.local',
-    crypt('test1234', gen_salt('bf')),
-    now(),
-    '{"full_name":"ทดสอบ ผู้อนุมัติ 2"}'::jsonb,
-    now(), now(), 'authenticated', 'authenticated'
-  );
 
 -- ============================================================
 -- Public Users (ผูกกับ auth.users)
