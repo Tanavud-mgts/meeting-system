@@ -114,7 +114,7 @@
 > **หมายเหตุ:** กรอก project_id จริงหลังสร้าง Supabase project แล้ว
 
 ```
-PROJECT_ID = <กรอกหลังสร้าง project>
+PROJECT_ID = sbmbdngrutkjugsmmfxa
 ```
 
 วิธีหา project_id:
