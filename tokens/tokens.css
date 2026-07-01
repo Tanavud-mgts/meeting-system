@@ -1,0 +1,89 @@
+/* ระบบจองห้องประชุมมหาวิทยาลัย — Design Tokens (CSS Custom Properties)
+   นำเข้าด้วย:  <link rel="stylesheet" href="tokens.css">  แล้วใช้ var(--token) */
+
+:root {
+  /* ---- Brand ---- */
+  --color-brand-primary:        #15727d;
+  --color-brand-primary-strong: #0e5a63;
+  --color-brand-accent:         #2a8a86;
+
+  /* ---- Neutral scale (cool gray-green) ---- */
+  --color-neutral-0:   #ffffff;
+  --color-neutral-50:  #f6f9f9;
+  --color-neutral-100: #eef2f2;
+  --color-neutral-150: #e6eeee;
+  --color-neutral-200: #e0e8e8;
+  --color-neutral-300: #d3dede;
+  --color-neutral-400: #b6c2c2;
+  --color-neutral-500: #8a989a;
+  --color-neutral-600: #5c6b6d;
+  --color-neutral-700: #33474a;
+  --color-neutral-900: #1b2b2d;
+
+  /* ---- Surface ---- */
+  --color-surface-page:   var(--color-neutral-100);
+  --color-surface-card:   var(--color-neutral-0);
+  --color-surface-sunken: #f7fafa;
+  --color-surface-field:  #fbfdfd;
+
+  /* ---- Text ---- */
+  --color-text-primary:    var(--color-neutral-900);
+  --color-text-secondary:  var(--color-neutral-600);
+  --color-text-muted:      var(--color-neutral-500);
+  --color-text-on-primary: #ffffff;
+
+  /* ---- Status: success / อนุมัติแล้ว ---- */
+  --color-success-solid:   #1f9d57;
+  --color-success-accent:  #3f9e74;
+  --color-success-surface: #e4f3ea;
+  --color-success-text:    #1c6b4c;
+
+  /* ---- Status: warning / รออนุมัติ ---- */
+  --color-warning-accent:  #d9a93c;
+  --color-warning-surface: #fbf1da;
+  --color-warning-text:    #876217;
+  --color-warning-border:  #f0d27a;
+
+  /* ---- Status: danger / ปฏิเสธ ---- */
+  --color-danger-solid:   #d24b3e;
+  --color-danger-surface: #fdecea;
+  --color-danger-text:    #c43d2f;
+  --color-danger-border:  #f1c4bd;
+
+  /* ---- Typography ---- */
+  --font-family-base: 'Sarabun', system-ui, sans-serif;
+  --font-family-mono: ui-monospace, Menlo, monospace;
+  --font-weight-light:    300;
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+  --font-size-xs:   11px;
+  --font-size-sm:   13px;
+  --font-size-base: 14.5px;
+  --font-size-md:   15px;
+  --font-size-lg:   17px;
+  --font-size-xl:   20px;
+  --font-size-2xl:  25px;
+
+  /* ---- Radius ---- */
+  --radius-sm:   8px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   16px;
+  --radius-pill: 999px;
+
+  /* ---- Spacing ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* ---- Shadow ---- */
+  --shadow-card:   0 3px 14px rgba(20, 60, 64, 0.05);
+  --shadow-raised: 0 4px 18px rgba(20, 60, 64, 0.06);
+  --shadow-modal:  0 20px 50px rgba(0, 0, 0, 0.25);
+}
