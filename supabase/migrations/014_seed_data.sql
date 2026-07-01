@@ -96,13 +96,9 @@ INSERT INTO bookings (
   'pending',
   0
 );
-INSERT INTO booking_slots (booking_id, room_id, start_time, end_time)
-VALUES (
-  'b1111111-1111-1111-1111-111111111111',
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  '2025-07-10 09:00:00+07',
-  '2025-07-10 11:00:00+07'
-);
+-- หมายเหตุ: ไม่ต้อง INSERT booking_slots เอง — trigger trg_create_slot
+-- (011_triggers_business_logic.sql) สร้างให้อัตโนมัติแล้วตอน INSERT bookings
+-- ด้านบน เหมือนกับ Booking 2-4 ด้านล่าง
 
 -- Booking 2: approved (อนุมัติครบ chain)
 INSERT INTO bookings (
