@@ -34,6 +34,13 @@ export default function BookingPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const [title, setTitle] = useState("");
+  const [activity, setActivity] = useState("");
+  const [attendees, setAttendees] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [refId, setRefId] = useState<string | null>(null);
+
   useEffect(() => {
     async function loadConfig() {
       const supabase = createClient();
@@ -109,6 +116,69 @@ export default function BookingPage() {
   function handleSelectRoom(room: Room) {
     setSelectedRoom(room);
     setStep(2);
+  }
+
+  const attendeesExceedsCapacity =
+    selectedRoom !== null &&
+    attendees !== "" &&
+    Number(attendees) > selectedRoom.capacity;
+
+  async function handleSubmit() {
+    if (!selectedRoom) return;
+    if (attendeesExceedsCapacity) return;
+
+    setSubmitting(true);
+    setSubmitError(null);
+
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      setSubmitError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setSubmitting(false);
+      return;
+    }
+
+    const startISO = `${date}T${startTime}:00+07:00`;
+    const endISO = `${date}T${endTime}:00+07:00`;
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-booking`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          room_id: selectedRoom.id,
+          title,
+          activity,
+          attendees: Number(attendees),
+          start_time: startISO,
+          end_time: endISO,
+        }),
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      setSubmitError(result.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setSubmitting(false);
+      return;
+    }
+
+    setRefId(result.ref_id);
+    setSubmitting(false);
+  }
+
+  function handleBackToSearch() {
+    setStep(1);
+    setSelectedRoom(null);
+    setSubmitError(null);
   }
 
   return (
@@ -196,6 +266,82 @@ export default function BookingPage() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {step === 2 && selectedRoom && !refId && (
+        <div className="mt-6 space-y-4 rounded-lg border border-neutral-200 bg-surface-card p-5">
+          <p className="text-sm text-text-secondary">
+            ห้อง: {selectedRoom.name} (ความจุ {selectedRoom.capacity} คน)
+          </p>
+
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            ชื่อการประชุม
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="rounded-sm border border-neutral-300 px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            รายละเอียดกิจกรรม
+            <textarea
+              value={activity}
+              onChange={(e) => setActivity(e.target.value)}
+              className="rounded-sm border border-neutral-300 px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            จำนวนผู้เข้าร่วม
+            <input
+              type="number"
+              value={attendees}
+              onChange={(e) => setAttendees(e.target.value)}
+              className="rounded-sm border border-neutral-300 px-3 py-2"
+            />
+          </label>
+
+          {attendeesExceedsCapacity && (
+            <p className="text-sm text-danger-text">
+              จำนวนผู้เข้าร่วมเกินความจุห้อง
+            </p>
+          )}
+
+          {submitError && (
+            <p className="text-sm text-danger-text">{submitError}</p>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleBackToSearch}
+              className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
+            >
+              กลับไปเลือกห้องใหม่
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                !title || !activity || !attendees || attendeesExceedsCapacity || submitting
+              }
+              className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
+            >
+              {submitting ? "กำลังบันทึก..." : "ยืนยันการจอง"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {refId && (
+        <div className="mt-6 rounded-lg border border-success-accent bg-success-surface p-5">
+          <p className="font-medium text-success-text">จองห้องสำเร็จ</p>
+          <p className="mt-1 text-sm text-success-text">
+            หมายเลขอ้างอิง: {refId}
+          </p>
         </div>
       )}
     </div>
