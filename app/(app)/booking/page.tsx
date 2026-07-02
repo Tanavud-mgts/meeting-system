@@ -1,0 +1,203 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+type BookingConfig = {
+  office_start_hour: number;
+  office_end_hour: number;
+  holidays: string[];
+};
+
+type Room = {
+  id: string;
+  name: string;
+  capacity: number;
+  equipment: string[];
+};
+
+export default function BookingPage() {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [config, setConfig] = useState<BookingConfig | null>(null);
+
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [unavailableRoomIds, setUnavailableRoomIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  useEffect(() => {
+    async function loadConfig() {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) return;
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/get-booking-config`,
+        {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }
+      );
+
+      if (res.ok) {
+        setConfig(await res.json());
+      }
+    }
+    loadConfig();
+  }, []);
+
+  const minTime = config
+    ? `${String(config.office_start_hour).padStart(2, "0")}:00`
+    : undefined;
+  const maxTime = config
+    ? `${String(config.office_end_hour).padStart(2, "0")}:00`
+    : undefined;
+  const isHoliday = config ? config.holidays.includes(date) : false;
+
+  async function handleSearch() {
+    setSearching(true);
+    setSearchError(null);
+    setHasSearched(false);
+
+    const supabase = createClient();
+    const startISO = `${date}T${startTime}:00+07:00`;
+    const endISO = `${date}T${endTime}:00+07:00`;
+
+    const { data: roomsData, error: roomsError } = await supabase
+      .from("rooms")
+      .select("id, name, capacity, equipment")
+      .neq("status", "maintenance")
+      .order("capacity", { ascending: true });
+
+    if (roomsError) {
+      setSearchError("ไม่สามารถโหลดรายชื่อห้องได้ กรุณาลองใหม่อีกครั้ง");
+      setSearching(false);
+      return;
+    }
+
+    const { data: slots, error: slotsError } = await supabase
+      .from("booking_slots")
+      .select("room_id")
+      .lt("start_time", endISO)
+      .gt("end_time", startISO);
+
+    if (slotsError) {
+      setSearchError("ไม่สามารถตรวจสอบห้องว่างได้ กรุณาลองใหม่อีกครั้ง");
+      setSearching(false);
+      return;
+    }
+
+    setRooms(roomsData ?? []);
+    setUnavailableRoomIds(
+      new Set((slots ?? []).map((s: { room_id: string }) => s.room_id))
+    );
+    setHasSearched(true);
+    setSearching(false);
+  }
+
+  function handleSelectRoom(room: Room) {
+    setSelectedRoom(room);
+    setStep(2);
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl p-6">
+      <h1 className="text-2xl font-semibold text-text-primary">จองห้องประชุม</h1>
+
+      {step === 1 && (
+        <div className="mt-6 space-y-4">
+          <div className="rounded-lg border border-neutral-200 bg-surface-card p-5">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className="flex flex-col gap-1 text-sm text-text-secondary">
+                วันที่
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="rounded-sm border border-neutral-300 px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-text-secondary">
+                เวลาเริ่ม
+                <input
+                  type="time"
+                  value={startTime}
+                  min={minTime}
+                  max={maxTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="rounded-sm border border-neutral-300 px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-text-secondary">
+                เวลาจบ
+                <input
+                  type="time"
+                  value={endTime}
+                  min={minTime}
+                  max={maxTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="rounded-sm border border-neutral-300 px-3 py-2"
+                />
+              </label>
+            </div>
+
+            {isHoliday && (
+              <p className="mt-3 text-sm text-danger-text">
+                วันที่เลือกเป็นวันหยุด ไม่สามารถจองห้องได้
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSearch}
+              disabled={!date || !startTime || !endTime || isHoliday || searching}
+              className="mt-4 rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
+            >
+              {searching ? "กำลังค้นหา..." : "ค้นหาห้องว่าง"}
+            </button>
+
+            {searchError && (
+              <p className="mt-3 text-sm text-danger-text">{searchError}</p>
+            )}
+          </div>
+
+          {hasSearched && (
+            <div className="space-y-2">
+              {rooms.map((room) => {
+                const unavailable = unavailableRoomIds.has(room.id);
+                return (
+                  <button
+                    key={room.id}
+                    type="button"
+                    disabled={unavailable}
+                    onClick={() => handleSelectRoom(room)}
+                    className={`w-full rounded-lg border border-neutral-200 bg-surface-card p-4 text-left ${
+                      unavailable ? "opacity-40" : "hover:bg-neutral-50"
+                    }`}
+                  >
+                    <p className="font-medium text-text-primary">{room.name}</p>
+                    <p className="text-sm text-text-secondary">
+                      ความจุ {room.capacity} คน
+                      {unavailable && " — ไม่ว่างในช่วงเวลานี้"}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
