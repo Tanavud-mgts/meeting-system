@@ -19,6 +19,7 @@ type Room = {
 export default function BookingPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [config, setConfig] = useState<BookingConfig | null>(null);
+  const [configError, setConfigError] = useState(false);
 
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -50,15 +51,21 @@ export default function BookingPage() {
 
       if (!session) return;
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/get-booking-config`,
-        {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }
-      );
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/get-booking-config`,
+          {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }
+        );
 
-      if (res.ok) {
-        setConfig(await res.json());
+        if (res.ok) {
+          setConfig(await res.json());
+        } else {
+          setConfigError(true);
+        }
+      } catch {
+        setConfigError(true);
       }
     }
     loadConfig();
@@ -187,6 +194,12 @@ export default function BookingPage() {
 
       {step === 1 && (
         <div className="mt-6 space-y-4">
+          {configError && (
+            <p className="text-sm text-warning-text">
+              ไม่สามารถโหลดเวลาทำการได้ กรุณาตรวจสอบเวลาทำการก่อนจอง
+            </p>
+          )}
+
           <div className="rounded-lg border border-neutral-200 bg-surface-card p-5">
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="flex flex-col gap-1 text-sm text-text-secondary">
