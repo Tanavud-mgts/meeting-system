@@ -90,36 +90,40 @@ export default function DashboardSettingsPage() {
       return;
     }
 
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/update-approval-chain`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          admin_id: adminId,
-          approver1_id: approver1Id,
-          approver2_id: approver2Id,
-          office_start_hour: Number(officeStartHour),
-          office_end_hour: Number(officeEndHour),
-          holidays,
-        }),
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/update-approval-chain`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            admin_id: adminId,
+            approver1_id: approver1Id,
+            approver2_id: approver2Id,
+            office_start_hour: Number(officeStartHour),
+            office_end_hour: Number(officeEndHour),
+            holidays,
+          }),
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        setFormError(result.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        return;
       }
-    );
 
-    const result = await res.json();
-
-    setSubmitting(false);
-
-    if (!res.ok) {
-      setFormError(result.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
-      return;
+      setSuccessMessage("บันทึกการตั้งค่าสำเร็จ");
+      await loadSettings();
+    } catch {
+      setFormError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setSubmitting(false);
     }
-
-    setSuccessMessage("บันทึกการตั้งค่าสำเร็จ");
-    await loadSettings();
   }
 
   return (
