@@ -415,3 +415,6 @@ enabled = true
 
 [functions.request-cancellation]
 verify_jwt = true
+
+[functions.decide-cancellation]
+verify_jwt = true
