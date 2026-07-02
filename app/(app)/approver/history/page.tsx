@@ -28,7 +28,11 @@ export default function ApproverHistoryPage() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user) {
+        setLoadError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("approval_logs")

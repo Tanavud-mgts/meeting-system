@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { NotFoundError, ConflictError, ForbiddenError } from "./errors.ts";
+import {
+  NotFoundError,
+  ConflictError,
+  ForbiddenError,
+  ValidationError,
+} from "./errors.ts";
 
 export type ApprovalAction = "approved" | "rejected";
 
@@ -24,6 +29,10 @@ export async function processApproval(
   params: ProcessApprovalParams
 ): Promise<ApprovalResult> {
   const { bookingId, step, approverId, action, note } = params;
+
+  if (action !== "approved" && action !== "rejected") {
+    throw new ValidationError("การกระทำไม่ถูกต้อง");
+  }
 
   const { data: booking, error: bookingError } = await client
     .from("bookings")

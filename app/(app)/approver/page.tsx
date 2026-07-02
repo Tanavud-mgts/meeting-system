@@ -37,7 +37,11 @@ export default function ApproverPage() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return;
+    if (!user) {
+      setLoadError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setLoading(false);
+      return;
+    }
 
     const { data: config, error: configError } = await supabase
       .from("system_config")
