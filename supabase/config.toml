@@ -426,3 +426,9 @@ enabled = true
 
 [functions.approve-booking]
 verify_jwt = true
+
+[functions.request-cancellation]
+verify_jwt = true
+
+[functions.decide-cancellation]
+verify_jwt = true
