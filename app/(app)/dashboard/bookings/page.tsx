@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Badge } from "@/components/ui/Badge";
 
 type BookingRow = {
   id: string;
@@ -28,13 +29,16 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled_by_admin: "ยกเลิกแล้ว",
 };
 
-const STATUS_BADGE_CLASS: Record<string, string> = {
-  pending: "bg-warning-surface text-warning-text",
-  approved: "bg-success-surface text-success-text",
-  cancel_requested: "bg-warning-surface text-warning-text",
-  rejected: "bg-danger-surface text-danger-text",
-  cancelled: "bg-neutral-150 text-text-secondary",
-  cancelled_by_admin: "bg-neutral-150 text-text-secondary",
+const STATUS_TONE: Record<
+  string,
+  "success" | "warning" | "danger" | "neutral"
+> = {
+  pending: "warning",
+  approved: "success",
+  cancel_requested: "warning",
+  rejected: "danger",
+  cancelled: "neutral",
+  cancelled_by_admin: "neutral",
 };
 
 const TERMINAL_STATUSES = ["cancelled", "cancelled_by_admin", "rejected"];
@@ -214,14 +218,11 @@ export default function DashboardBookingsPage() {
             <p className="text-sm text-text-secondary">
               {b.ref_id} — ห้อง {b.room_name} — ผู้จอง {b.requester_name}
             </p>
-            <span
-              className={`mt-1 inline-block rounded-pill px-2.5 py-0.5 text-xs font-semibold ${
-                STATUS_BADGE_CLASS[b.final_status] ??
-                "bg-neutral-150 text-text-secondary"
-              }`}
-            >
-              {STATUS_LABEL[b.final_status] ?? b.final_status}
-            </span>
+            <div className="mt-1">
+              <Badge tone={STATUS_TONE[b.final_status] ?? "neutral"}>
+                {STATUS_LABEL[b.final_status] ?? b.final_status}
+              </Badge>
+            </div>
             {!TERMINAL_STATUSES.includes(b.final_status) && (
               <button
                 type="button"
