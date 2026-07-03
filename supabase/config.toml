@@ -418,3 +418,6 @@ verify_jwt = true
 
 [functions.direct-cancel-booking]
 verify_jwt = true
+
+[functions.export-data]
+verify_jwt = true
