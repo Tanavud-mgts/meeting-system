@@ -432,3 +432,21 @@ verify_jwt = true
 
 [functions.decide-cancellation]
 verify_jwt = true
+
+[functions.update-approval-chain]
+verify_jwt = true
+
+[functions.direct-cancel-booking]
+verify_jwt = true
+
+[functions.export-data]
+verify_jwt = true
+
+[functions.update-retention-settings]
+verify_jwt = true
+
+[functions.cleanup-logs-now]
+verify_jwt = true
+
+[functions.complete-setup]
+verify_jwt = true

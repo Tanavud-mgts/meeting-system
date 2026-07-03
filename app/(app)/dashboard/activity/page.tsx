@@ -1,0 +1,171 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+type ActivityRow = {
+  id: string;
+  event_type: "approval" | "cancellation" | "config_change";
+  sub_type: string;
+  actor_name: string;
+  related_ref: string | null;
+  detail: string | null;
+  occurred_at: string;
+};
+
+const EVENT_TYPE_LABEL: Record<string, string> = {
+  approval: "การอนุมัติ",
+  cancellation: "การยกเลิก",
+  config_change: "การตั้งค่า",
+};
+
+function getEventLabel(eventType: string, subType: string): string {
+  if (eventType === "approval" && subType === "approved") {
+    return "อนุมัติคำขอจอง";
+  }
+  if (eventType === "approval" && subType === "rejected") {
+    return "ปฏิเสธคำขอจอง";
+  }
+  if (eventType === "cancellation" && subType === "user_cancel") {
+    return "ผู้ใช้ยกเลิกการจอง";
+  }
+  if (eventType === "cancellation" && subType === "staff_cancel") {
+    return "เจ้าหน้าที่ยกเลิกการจอง";
+  }
+  return subType;
+}
+
+const PAGE_SIZE = 20;
+
+export default function DashboardActivityPage() {
+  const [entries, setEntries] = useState<ActivityRow[]>([]);
+  const [eventTypeFilter, setEventTypeFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  async function loadActivity() {
+    setLoading(true);
+    setLoadError(null);
+
+    const supabase = createClient();
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    let query = supabase
+      .from("staff_activity_timeline")
+      .select(
+        "id, event_type, sub_type, actor_name, related_ref, detail, occurred_at",
+        { count: "exact" }
+      )
+      .order("occurred_at", { ascending: false })
+      .range(from, to);
+
+    if (eventTypeFilter) {
+      query = query.eq("event_type", eventTypeFilter);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      setLoadError("ไม่สามารถโหลดประวัติการทำงานได้");
+      setLoading(false);
+      return;
+    }
+
+    setEntries((data ?? []) as ActivityRow[]);
+    setTotalCount(count ?? 0);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadActivity();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, eventTypeFilter]);
+
+  function handleFilterChange(value: string) {
+    setEventTypeFilter(value);
+    setPage(0);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  return (
+    <div className="mx-auto max-w-2xl p-6">
+      <h1 className="text-2xl font-semibold text-text-primary">
+        ประวัติการทำงานรวม
+      </h1>
+
+      <div className="mt-4">
+        <select
+          value={eventTypeFilter}
+          onChange={(e) => handleFilterChange(e.target.value)}
+          className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+        >
+          <option value="">ทั้งหมด</option>
+          <option value="approval">{EVENT_TYPE_LABEL.approval}</option>
+          <option value="cancellation">{EVENT_TYPE_LABEL.cancellation}</option>
+          <option value="config_change">
+            {EVENT_TYPE_LABEL.config_change}
+          </option>
+        </select>
+      </div>
+
+      {loadError && (
+        <p className="mt-4 text-sm text-danger-text">{loadError}</p>
+      )}
+
+      {!loading && entries.length === 0 && !loadError && (
+        <p className="mt-4 text-sm text-text-secondary">
+          ไม่พบประวัติการทำงาน
+        </p>
+      )}
+
+      <div className="mt-4 space-y-3">
+        {entries.map((e) => (
+          <div
+            key={e.id}
+            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
+          >
+            <p className="font-medium text-text-primary">
+              {getEventLabel(e.event_type, e.sub_type)}
+            </p>
+            <p className="text-sm text-text-secondary">
+              โดย {e.actor_name}
+              {e.related_ref && ` — ${e.related_ref}`}
+            </p>
+            {e.detail && (
+              <p className="text-sm text-text-secondary">{e.detail}</p>
+            )}
+            <p className="mt-1 text-sm text-text-secondary">
+              {new Date(e.occurred_at).toLocaleString("th-TH")}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={page === 0}
+          className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
+        >
+          ก่อนหน้า
+        </button>
+        <span className="text-sm text-text-secondary">
+          หน้า {page + 1} / {totalPages}
+        </span>
+        <button
+          type="button"
+          onClick={() => setPage((p) => p + 1)}
+          disabled={page + 1 >= totalPages}
+          className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
+        >
+          ถัดไป
+        </button>
+      </div>
+    </div>
+  );
+}
