@@ -7,6 +7,9 @@ export function Card({
 }: {
   children: ReactNode;
   className?: string;
+  // Use this to override spacing, not className — Tailwind resolves
+  // conflicting utilities by stylesheet order, not string position, so a
+  // padding class inside className can silently lose to this prop's p-5.
   padding?: string;
 }) {
   return (
