@@ -415,3 +415,6 @@ enabled = true
 
 [functions.update-approval-chain]
 verify_jwt = true
+
+[functions.direct-cancel-booking]
+verify_jwt = true
