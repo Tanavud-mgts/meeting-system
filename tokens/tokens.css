@@ -3,9 +3,10 @@
 
 :root {
   /* ---- Brand ---- */
-  --color-brand-primary:        #15727d;
-  --color-brand-primary-strong: #0e5a63;
+  --color-brand-primary:        #0d8a5f;
+  --color-brand-primary-strong: #0a6b48;
   --color-brand-accent:         #2a8a86;
+  --gradient-brand: linear-gradient(135deg, #0d8a5f, #10b981);
 
   /* ---- Neutral scale (cool gray-green) ---- */
   --color-neutral-0:   #ffffff;
@@ -84,6 +85,9 @@
 
   /* ---- Shadow ---- */
   --shadow-card:   0 3px 14px rgba(20, 60, 64, 0.05);
-  --shadow-raised: 0 4px 18px rgba(20, 60, 64, 0.06);
+  --shadow-raised: 0 8px 24px rgba(13, 138, 95, 0.16);
   --shadow-modal:  0 20px 50px rgba(0, 0, 0, 0.25);
+
+  /* ---- Transition ---- */
+  --transition-base: 150ms;
 }

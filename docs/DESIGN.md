@@ -12,9 +12,10 @@
 ### Brand
 | Token | CSS variable | HEX | การใช้งาน |
 |---|---|---|---|
-| brand.primary | `--color-brand-primary` | `#15727d` | ปุ่มหลัก · แถบ active · ไฮไลต์ |
-| brand.primary-strong | `--color-brand-primary-strong` | `#0e5a63` | พื้นหลังเข้ม · แถบสรุปห้องที่เลือก |
+| brand.primary | `--color-brand-primary` | `#0d8a5f` | ปุ่มหลัก · แถบ active · ไฮไลต์ |
+| brand.primary-strong | `--color-brand-primary-strong` | `#0a6b48` | พื้นหลังเข้ม · แถบสรุปห้องที่เลือก |
 | brand.accent | `--color-brand-accent` | `#2a8a86` | eyebrow · ลิงก์ · ข้อความเน้น |
+| brand.gradient | `--gradient-brand` | `linear-gradient(135deg, #0d8a5f, #10b981)` | ปุ่ม/ไฮไลต์พิเศษ |
 
 ### Neutral scale
 | Token | CSS variable | HEX |
@@ -88,7 +89,7 @@ Scale ฐาน 4px — ใช้กับ padding, gap, margin
 | Token | CSS variable | ค่า |
 |---|---|---|
 | shadow.card | `--shadow-card` | `0 3px 14px rgba(20,60,64,.05)` |
-| shadow.raised | `--shadow-raised` | `0 4px 18px rgba(20,60,64,.06)` |
+| shadow.raised | `--shadow-raised` | `0 8px 24px rgba(13,138,95,.16)` |
 | shadow.modal | `--shadow-modal` | `0 20px 50px rgba(0,0,0,.25)` |
 
 ---
