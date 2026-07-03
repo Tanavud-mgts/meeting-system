@@ -1,0 +1,364 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+type Dataset = "bookings" | "approval_history" | "users";
+
+const DATASET_LABEL: Record<Dataset, string> = {
+  bookings: "การจอง",
+  approval_history: "ประวัติการอนุมัติ",
+  users: "ผู้ใช้",
+};
+
+export default function DashboardDataPage() {
+  const [activityRetention, setActivityRetention] = useState("");
+  const [integrationRetention, setIntegrationRetention] = useState("");
+  const [lineTokenRetention, setLineTokenRetention] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retentionError, setRetentionError] = useState<string | null>(null);
+  const [retentionSuccess, setRetentionSuccess] = useState<string | null>(
+    null
+  );
+  const [retentionSubmitting, setRetentionSubmitting] = useState(false);
+  const [exportingDataset, setExportingDataset] = useState<Dataset | null>(
+    null
+  );
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [cleanupConfirmOpen, setCleanupConfirmOpen] = useState(false);
+  const [cleanupSubmitting, setCleanupSubmitting] = useState(false);
+  const [cleanupError, setCleanupError] = useState<string | null>(null);
+  const [cleanupSuccess, setCleanupSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadConfig() {
+      setLoadError(null);
+
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("system_config")
+        .select(
+          "activity_log_retention_months, integration_log_retention_months, line_token_retention_days"
+        )
+        .single();
+
+      if (error || !data) {
+        setLoadError("ไม่สามารถโหลดการตั้งค่าได้");
+        return;
+      }
+
+      setActivityRetention(String(data.activity_log_retention_months));
+      setIntegrationRetention(
+        String(data.integration_log_retention_months)
+      );
+      setLineTokenRetention(String(data.line_token_retention_days));
+    }
+
+    loadConfig();
+  }, []);
+
+  async function handleExport(dataset: Dataset) {
+    setExportingDataset(dataset);
+    setExportError(null);
+
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      setExportError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setExportingDataset(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/export-data`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ dataset }),
+        }
+      );
+
+      if (!res.ok) {
+        const result = await res.json();
+        setExportError(result.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${dataset}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setExportingDataset(null);
+    }
+  }
+
+  async function handleRetentionSubmit() {
+    setRetentionSubmitting(true);
+    setRetentionError(null);
+    setRetentionSuccess(null);
+
+    const activityNum = Number(activityRetention);
+    const integrationNum = Number(integrationRetention);
+    const lineTokenNum = Number(lineTokenRetention);
+
+    if (
+      !Number.isInteger(activityNum) ||
+      activityNum <= 0 ||
+      !Number.isInteger(integrationNum) ||
+      integrationNum <= 0 ||
+      !Number.isInteger(lineTokenNum) ||
+      lineTokenNum <= 0
+    ) {
+      setRetentionError("ค่าที่กรอกต้องเป็นจำนวนเต็มบวก");
+      setRetentionSubmitting(false);
+      return;
+    }
+
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      setRetentionError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setRetentionSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/update-retention-settings`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            activity_log_retention_months: activityNum,
+            integration_log_retention_months: integrationNum,
+            line_token_retention_days: lineTokenNum,
+          }),
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        setRetentionError(result.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      setRetentionSuccess("บันทึกการตั้งค่าสำเร็จ");
+    } catch {
+      setRetentionError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setRetentionSubmitting(false);
+    }
+  }
+
+  async function handleConfirmCleanup() {
+    setCleanupSubmitting(true);
+    setCleanupError(null);
+    setCleanupSuccess(null);
+
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      setCleanupError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setCleanupSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/cleanup-logs-now`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        setCleanupError(result.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      setCleanupSuccess("ล้าง log เก่าสำเร็จ");
+      setCleanupConfirmOpen(false);
+    } catch {
+      setCleanupError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setCleanupSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl p-6">
+      <h1 className="text-2xl font-semibold text-text-primary">
+        จัดการข้อมูล
+      </h1>
+
+      {loadError && (
+        <p className="mt-4 text-sm text-danger-text">{loadError}</p>
+      )}
+
+      <div className="mt-6 rounded-lg border border-neutral-200 bg-surface-card p-5">
+        <p className="font-medium text-text-primary">Export ข้อมูล</p>
+        {exportError && (
+          <p className="mt-2 text-sm text-danger-text">{exportError}</p>
+        )}
+        <div className="mt-3 flex flex-wrap gap-3">
+          {(["bookings", "approval_history", "users"] as Dataset[]).map(
+            (dataset) => (
+              <button
+                key={dataset}
+                type="button"
+                onClick={() => handleExport(dataset)}
+                disabled={exportingDataset === dataset}
+                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
+              >
+                {exportingDataset === dataset
+                  ? "กำลังสร้างไฟล์..."
+                  : `Export ${DATASET_LABEL[dataset]} (CSV)`}
+              </button>
+            )
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-neutral-200 bg-surface-card p-5">
+        <p className="font-medium text-text-primary">Retention Settings</p>
+        <div className="mt-3 space-y-3">
+          <div>
+            <label className="text-sm text-text-secondary">
+              เก็บ Activity Log กี่เดือน
+            </label>
+            <input
+              type="number"
+              min={1}
+              value={activityRetention}
+              onChange={(e) => setActivityRetention(e.target.value)}
+              className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-text-secondary">
+              เก็บ Integration Log กี่เดือน
+            </label>
+            <input
+              type="number"
+              min={1}
+              value={integrationRetention}
+              onChange={(e) => setIntegrationRetention(e.target.value)}
+              className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-text-secondary">
+              เก็บ LINE Token กี่วัน
+            </label>
+            <input
+              type="number"
+              min={1}
+              value={lineTokenRetention}
+              onChange={(e) => setLineTokenRetention(e.target.value)}
+              className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+            />
+          </div>
+        </div>
+        {retentionError && (
+          <p className="mt-2 text-sm text-danger-text">{retentionError}</p>
+        )}
+        {retentionSuccess && (
+          <p className="mt-2 text-sm text-success-text">
+            {retentionSuccess}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={handleRetentionSubmit}
+          disabled={retentionSubmitting}
+          className="mt-3 rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
+        >
+          {retentionSubmitting ? "กำลังบันทึก..." : "บันทึกการตั้งค่า"}
+        </button>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-danger-border bg-danger-surface p-5">
+        <p className="font-medium text-danger-text">Danger Zone</p>
+        <p className="mt-1 text-sm text-danger-text">
+          การกระทำในส่วนนี้ไม่สามารถย้อนกลับได้
+        </p>
+        {cleanupError && (
+          <p className="mt-2 text-sm text-danger-text">{cleanupError}</p>
+        )}
+        {cleanupSuccess && (
+          <p className="mt-2 text-sm text-success-text">{cleanupSuccess}</p>
+        )}
+        <button
+          type="button"
+          onClick={() => setCleanupConfirmOpen(true)}
+          className="mt-3 rounded-sm bg-danger-solid px-4 py-2 text-sm font-medium text-text-on-primary"
+        >
+          ล้าง log เก่าทันที
+        </button>
+      </div>
+
+      {cleanupConfirmOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
+            <p className="text-lg font-semibold text-text-primary">
+              ยืนยันการล้าง log เก่า
+            </p>
+            <p className="mt-2 text-sm text-text-secondary">
+              การกระทำนี้จะลบ Activity Log และ Integration Log
+              ที่เก่าเกินระยะเวลาที่ตั้งไว้ถาวร กู้คืนไม่ได้
+              (ไม่กระทบประวัติการอนุมัติและการยกเลิก ซึ่งเก็บถาวรเสมอ)
+            </p>
+            <div className="mt-4 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setCleanupConfirmOpen(false)}
+                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCleanup}
+                disabled={cleanupSubmitting}
+                className="rounded-sm bg-danger-solid px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
+              >
+                {cleanupSubmitting ? "กำลังลบ..." : "ยืนยันลบ"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
