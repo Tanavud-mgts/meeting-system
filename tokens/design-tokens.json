@@ -4,9 +4,10 @@
 
   "color": {
     "brand": {
-      "primary":        { "$type": "color", "$value": "#15727d", "$description": "สีหลัก teal ปุ่ม/ไฮไลต์/แถบ active" },
-      "primary-strong": { "$type": "color", "$value": "#0e5a63", "$description": "teal เข้ม พื้นหลังเข้ม/แถบสรุป" },
-      "accent":         { "$type": "color", "$value": "#2a8a86", "$description": "teal สว่าง สำหรับ eyebrow/ลิงก์" }
+      "primary":        { "$type": "color", "$value": "#0d8a5f", "$description": "สีหลัก เขียว-เทอร์คอยสด ปุ่ม/ไฮไลต์/แถบ active" },
+      "primary-strong": { "$type": "color", "$value": "#0a6b48", "$description": "เขียวเข้ม พื้นหลังเข้ม/แถบสรุป" },
+      "accent":         { "$type": "color", "$value": "#2a8a86", "$description": "teal สว่าง สำหรับ eyebrow/ลิงก์" },
+      "gradient":       { "$type": "color", "$value": "linear-gradient(135deg, #0d8a5f, #10b981)", "$description": "gradient สำหรับปุ่ม/ไฮไลต์พิเศษ" }
     },
     "neutral": {
       "0":   { "$type": "color", "$value": "#ffffff" },
@@ -98,7 +99,7 @@
 
   "shadow": {
     "card":  { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "3px",  "blur": "14px", "spread": "0", "color": "rgba(20,60,64,0.05)" } },
-    "raised":{ "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "4px",  "blur": "18px", "spread": "0", "color": "rgba(20,60,64,0.06)" } },
+    "raised":{ "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "8px",  "blur": "24px", "spread": "0", "color": "rgba(13,138,95,0.16)" } },
     "modal": { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "20px", "blur": "50px", "spread": "0", "color": "rgba(0,0,0,0.25)" } }
   }
 }
