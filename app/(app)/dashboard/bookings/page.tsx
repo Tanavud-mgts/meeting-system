@@ -28,6 +28,15 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled_by_admin: "ยกเลิกแล้ว",
 };
 
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  pending: "bg-warning-surface text-warning-text",
+  approved: "bg-success-surface text-success-text",
+  cancel_requested: "bg-warning-surface text-warning-text",
+  rejected: "bg-danger-surface text-danger-text",
+  cancelled: "bg-neutral-150 text-text-secondary",
+  cancelled_by_admin: "bg-neutral-150 text-text-secondary",
+};
+
 const TERMINAL_STATUSES = ["cancelled", "cancelled_by_admin", "rejected"];
 const PAGE_SIZE = 20;
 
@@ -205,9 +214,14 @@ export default function DashboardBookingsPage() {
             <p className="text-sm text-text-secondary">
               {b.ref_id} — ห้อง {b.room_name} — ผู้จอง {b.requester_name}
             </p>
-            <p className="text-sm text-text-secondary">
-              สถานะ: {STATUS_LABEL[b.final_status] ?? b.final_status}
-            </p>
+            <span
+              className={`mt-1 inline-block rounded-pill px-2.5 py-0.5 text-xs font-semibold ${
+                STATUS_BADGE_CLASS[b.final_status] ??
+                "bg-neutral-150 text-text-secondary"
+              }`}
+            >
+              {STATUS_LABEL[b.final_status] ?? b.final_status}
+            </span>
             {!TERMINAL_STATUSES.includes(b.final_status) && (
               <button
                 type="button"
