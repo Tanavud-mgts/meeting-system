@@ -424,3 +424,6 @@ verify_jwt = true
 
 [functions.update-retention-settings]
 verify_jwt = true
+
+[functions.cleanup-logs-now]
+verify_jwt = true
