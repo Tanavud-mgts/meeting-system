@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import AppNav from "./AppNav";
 
 type NavItem = { href: string; label: string };
 
@@ -67,33 +67,10 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
-      <aside className="hidden w-[200px] shrink-0 border-r border-neutral-200 bg-surface-card p-4 md:block">
-        <nav className="flex flex-col gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-neutral-100"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <main className="flex-1 bg-surface-page">{children}</main>
-
-      <nav className="fixed inset-x-0 bottom-0 flex h-16 items-center justify-around border-t border-neutral-200 bg-surface-card pb-[env(safe-area-inset-bottom)] md:hidden">
-        {navItems.slice(0, 4).map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="text-xs text-text-secondary"
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      <AppNav navItems={navItems} />
+      <main className="flex-1 bg-surface-page pt-14 pb-20 md:pt-0 md:pb-0">
+        {children}
+      </main>
     </div>
   );
 }
