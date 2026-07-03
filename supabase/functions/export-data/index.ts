@@ -122,7 +122,9 @@ Deno.serve(
       .toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" })
       .replace(/-/g, "");
 
-    return new Response(csv, {
+    const BOM = String.fromCharCode(0xfeff);
+
+    return new Response(BOM + csv, {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
