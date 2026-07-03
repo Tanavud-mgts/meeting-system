@@ -71,6 +71,20 @@ export async function updateSession(request: NextRequest) {
     if (!profile || !requiredRoles.includes(profile.role)) {
       return NextResponse.redirect(new URL("/home", request.url));
     }
+
+    if (
+      profile.role === "admin" &&
+      request.nextUrl.pathname.startsWith("/dashboard")
+    ) {
+      const { data: config } = await supabase
+        .from("system_config")
+        .select("setup_completed")
+        .single();
+
+      if (config && config.setup_completed === false) {
+        return NextResponse.redirect(new URL("/setup", request.url));
+      }
+    }
   }
 
   return response;
