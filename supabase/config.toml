@@ -385,6 +385,17 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# get-booking-config reads system_config (office hours, holidays) using the
+# service-role key, bypassing RLS. It must require a valid JWT so
+# unauthenticated callers cannot read this data directly.
+[functions.get-booking-config]
+verify_jwt = true
+
+# create-booking must require a valid JWT so only authenticated users can
+# create bookings.
+[functions.create-booking]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
