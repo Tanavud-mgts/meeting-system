@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
 
 type Stats = {
   bookingPending: number;
@@ -119,7 +120,7 @@ export default function DashboardOverviewPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         ภาพรวมระบบ
       </h1>
@@ -133,7 +134,7 @@ export default function DashboardOverviewPage() {
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Link
               href="/approver"
-              className="rounded-lg border border-warning-border bg-warning-surface p-5"
+              className="rounded-lg border border-warning-border bg-warning-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised"
             >
               <p className="text-sm text-text-secondary">รอ Admin อนุมัติ</p>
               <p className="text-2xl font-semibold text-warning-text">
@@ -142,7 +143,7 @@ export default function DashboardOverviewPage() {
             </Link>
             <Link
               href="/approver/cancel-requests"
-              className="rounded-lg border border-warning-border bg-warning-surface p-5"
+              className="rounded-lg border border-warning-border bg-warning-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised"
             >
               <p className="text-sm text-text-secondary">
                 รอพิจารณาคำขอยกเลิก
@@ -156,86 +157,86 @@ export default function DashboardOverviewPage() {
           <div className="mt-6">
             <p className="font-medium text-text-primary">การจอง</p>
             <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">รออนุมัติ</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.bookingPending}
                 </p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              </Card>
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">อนุมัติแล้ว</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.bookingApproved}
                 </p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              </Card>
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">
                   รอพิจารณายกเลิก
                 </p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.bookingCancelRequested}
                 </p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              </Card>
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">ถูกปฏิเสธ</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.bookingRejected}
                 </p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              </Card>
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">ยกเลิกแล้ว</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.bookingCancelled}
                 </p>
-              </div>
+              </Card>
             </div>
           </div>
 
           <div className="mt-6">
             <p className="font-medium text-text-primary">ห้องประชุม</p>
             <div className="mt-2 grid grid-cols-3 gap-3">
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">ว่าง</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.roomAvailable}
                 </p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              </Card>
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">ไม่ว่าง</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.roomBusy}
                 </p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              </Card>
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">ปิดปรับปรุง</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.roomMaintenance}
                 </p>
-              </div>
+              </Card>
             </div>
           </div>
 
           <div className="mt-6">
             <p className="font-medium text-text-primary">ผู้ใช้งาน</p>
             <div className="mt-2 grid grid-cols-3 gap-3">
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">ผู้ใช้ทั่วไป</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.userCount}
                 </p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              </Card>
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">ผู้อนุมัติ</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.approverCount}
                 </p>
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-surface-card p-4">
+              </Card>
+              <Card padding="p-4">
                 <p className="text-sm text-text-secondary">ผู้ดูแลระบบ</p>
                 <p className="text-xl font-semibold text-text-primary">
                   {stats.adminCount}
                 </p>
-              </div>
+              </Card>
             </div>
           </div>
         </>
