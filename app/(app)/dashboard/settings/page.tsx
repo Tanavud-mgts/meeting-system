@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type ChainUser = {
   id: string;
@@ -127,7 +130,7 @@ export default function DashboardSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         ตั้งค่าระบบ
       </h1>
@@ -142,9 +145,17 @@ export default function DashboardSettingsPage() {
         <p className="mt-4 text-sm text-success-text">{successMessage}</p>
       )}
 
+      {loading && (
+        <div className="mt-4 space-y-6">
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      )}
+
       {!loading && !loadError && (
         <div className="mt-4 space-y-6">
-          <div className="rounded-lg border border-neutral-200 bg-surface-card p-5">
+          <Card>
             <p className="font-medium text-text-primary">Approval Chain</p>
             <div className="mt-3 space-y-3">
               <div>
@@ -199,9 +210,9 @@ export default function DashboardSettingsPage() {
                 </select>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-lg border border-neutral-200 bg-surface-card p-5">
+          <Card>
             <p className="font-medium text-text-primary">เวลาทำการ</p>
             <div className="mt-3 flex gap-3">
               <div>
@@ -231,9 +242,9 @@ export default function DashboardSettingsPage() {
                 />
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-lg border border-neutral-200 bg-surface-card p-5">
+          <Card>
             <p className="font-medium text-text-primary">วันหยุด</p>
             <div className="mt-3 flex gap-3">
               <input
@@ -242,13 +253,9 @@ export default function DashboardSettingsPage() {
                 onChange={(e) => setNewHoliday(e.target.value)}
                 className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
               />
-              <button
-                type="button"
-                onClick={addHoliday}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
+              <Button variant="secondary" onClick={addHoliday}>
                 เพิ่ม
-              </button>
+              </Button>
             </div>
             <div className="mt-3 space-y-2">
               {holidays.map((h) => (
@@ -267,16 +274,11 @@ export default function DashboardSettingsPage() {
                 <p className="text-sm text-text-secondary">ยังไม่มีวันหยุด</p>
               )}
             </div>
-          </div>
+          </Card>
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
-          >
+          <Button onClick={handleSubmit} disabled={submitting}>
             {submitting ? "กำลังบันทึก..." : "บันทึกการตั้งค่า"}
-          </button>
+          </Button>
         </div>
       )}
     </div>
