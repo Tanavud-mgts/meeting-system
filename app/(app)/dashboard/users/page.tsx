@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type UserRow = {
   id: string;
@@ -142,7 +146,7 @@ export default function DashboardUsersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         จัดการผู้ใช้
       </h1>
@@ -154,53 +158,58 @@ export default function DashboardUsersPage() {
         <p className="mt-4 text-sm text-danger-text">{actionError}</p>
       )}
 
-      <div className="mt-4 space-y-3">
-        {users.map((u) => (
-          <div
-            key={u.id}
-            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-          >
-            <p className="font-medium text-text-primary">{u.full_name}</p>
-            <p className="text-sm text-text-secondary">{u.email}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <select
-                value={u.role}
-                disabled={savingId === u.id}
-                onChange={(e) =>
-                  handleRoleChange(
-                    u,
-                    e.target.value as "user" | "approver" | "admin"
-                  )
-                }
-                className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
-              >
-                <option value="user">{ROLE_LABEL.user}</option>
-                <option value="approver">{ROLE_LABEL.approver}</option>
-                <option value="admin">{ROLE_LABEL.admin}</option>
-              </select>
-              <input
-                type="text"
-                defaultValue={u.department ?? ""}
-                disabled={savingId === u.id}
-                onBlur={(e) => handleDepartmentBlur(u, e.target.value)}
-                placeholder="หน่วยงาน"
-                className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
-              />
-              <button
-                type="button"
-                onClick={() => setAnonymizeTarget(u)}
-                className="rounded-sm border border-danger-border bg-danger-surface px-4 py-2 text-sm font-medium text-danger-text"
-              >
-                ลบข้อมูลส่วนตัว (PDPA)
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {loading && (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      )}
 
-      {anonymizeTarget && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
+      {!loading && (
+        <div className="mt-4 space-y-3">
+          {users.map((u) => (
+            <Card key={u.id}>
+              <p className="font-medium text-text-primary">{u.full_name}</p>
+              <p className="text-sm text-text-secondary">{u.email}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <select
+                  value={u.role}
+                  disabled={savingId === u.id}
+                  onChange={(e) =>
+                    handleRoleChange(
+                      u,
+                      e.target.value as "user" | "approver" | "admin"
+                    )
+                  }
+                  className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+                >
+                  <option value="user">{ROLE_LABEL.user}</option>
+                  <option value="approver">{ROLE_LABEL.approver}</option>
+                  <option value="admin">{ROLE_LABEL.admin}</option>
+                </select>
+                <input
+                  type="text"
+                  defaultValue={u.department ?? ""}
+                  disabled={savingId === u.id}
+                  onBlur={(e) => handleDepartmentBlur(u, e.target.value)}
+                  placeholder="หน่วยงาน"
+                  className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+                />
+                <Button variant="danger" onClick={() => setAnonymizeTarget(u)}>
+                  ลบข้อมูลส่วนตัว (PDPA)
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Modal
+        open={anonymizeTarget !== null}
+        onClose={() => setAnonymizeTarget(null)}
+      >
+        {anonymizeTarget && (
+          <>
             <p className="text-lg font-semibold text-text-primary">
               ยืนยันการลบข้อมูลส่วนตัว
             </p>
@@ -219,25 +228,24 @@ export default function DashboardUsersPage() {
               </p>
             )}
             <div className="mt-4 flex gap-3">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setAnonymizeTarget(null)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="primary"
+                className="bg-danger-solid hover:bg-danger-solid"
                 onClick={handleConfirmAnonymize}
                 disabled={submitting}
-                className="rounded-sm bg-danger-solid px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
               >
                 {submitting ? "กำลังลบ..." : "ยืนยันลบข้อมูล"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
