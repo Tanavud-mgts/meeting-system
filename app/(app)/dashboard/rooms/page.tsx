@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type Room = {
   id: string;
@@ -187,18 +191,12 @@ export default function DashboardRoomsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-text-primary">
           จัดการห้องประชุม
         </h1>
-        <button
-          type="button"
-          onClick={openCreateForm}
-          className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary"
-        >
-          เพิ่มห้องใหม่
-        </button>
+        <Button onClick={openCreateForm}>เพิ่มห้องใหม่</Button>
       </div>
 
       {loadError && (
@@ -215,110 +213,96 @@ export default function DashboardRoomsPage() {
         <p className="mt-4 text-sm text-text-secondary">ยังไม่มีห้องประชุม</p>
       )}
 
-      <div className="mt-4 space-y-3">
-        {rooms.map((r) => (
-          <div
-            key={r.id}
-            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-          >
-            <p className="font-medium text-text-primary">{r.name}</p>
-            <p className="text-sm text-text-secondary">
-              ความจุ {r.capacity} คน — สถานะ: {STATUS_LABEL[r.status] ?? r.status}
-            </p>
-            {r.equipment.length > 0 && (
-              <p className="text-sm text-text-secondary">
-                อุปกรณ์: {r.equipment.join(", ")}
-              </p>
-            )}
-            <div className="mt-3 flex gap-3">
-              <button
-                type="button"
-                onClick={() => openEditForm(r)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
-                แก้ไข
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDeleteClick(r)}
-                className="rounded-sm border border-danger-border bg-danger-surface px-4 py-2 text-sm font-medium text-danger-text"
-              >
-                ลบ
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showForm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
-            <p className="text-lg font-semibold text-text-primary">
-              {editing ? "แก้ไขห้องประชุม" : "เพิ่มห้องใหม่"}
-            </p>
-            <div className="mt-3 space-y-3">
-              <input
-                type="text"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder="ชื่อห้อง"
-                className="w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
-              />
-              <input
-                type="number"
-                value={formCapacity}
-                onChange={(e) => setFormCapacity(e.target.value)}
-                placeholder="จำนวนที่นั่ง"
-                className="w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
-              />
-              <select
-                value={formStatus}
-                onChange={(e) =>
-                  setFormStatus(
-                    e.target.value as "available" | "busy" | "maintenance"
-                  )
-                }
-                className="w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
-              >
-                <option value="available">ว่าง</option>
-                <option value="busy">ไม่ว่าง</option>
-                <option value="maintenance">ปิดปรับปรุง</option>
-              </select>
-              <input
-                type="text"
-                value={formEquipment}
-                onChange={(e) => setFormEquipment(e.target.value)}
-                placeholder="อุปกรณ์ (คั่นด้วยจุลภาค เช่น projector, whiteboard)"
-                className="w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
-              />
-            </div>
-            {formError && (
-              <p className="mt-2 text-sm text-danger-text">{formError}</p>
-            )}
-            <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmitForm}
-                disabled={submitting}
-                className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
-              >
-                {submitting ? "กำลังบันทึก..." : "บันทึก"}
-              </button>
-            </div>
-          </div>
+      {loading && (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
         </div>
       )}
 
-      {deleteTarget && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
+      {!loading && (
+        <div className="mt-4 space-y-3">
+          {rooms.map((r) => (
+            <Card key={r.id}>
+              <p className="font-medium text-text-primary">{r.name}</p>
+              <p className="text-sm text-text-secondary">
+                ความจุ {r.capacity} คน — สถานะ:{" "}
+                {STATUS_LABEL[r.status] ?? r.status}
+              </p>
+              {r.equipment.length > 0 && (
+                <p className="text-sm text-text-secondary">
+                  อุปกรณ์: {r.equipment.join(", ")}
+                </p>
+              )}
+              <div className="mt-3 flex gap-3">
+                <Button variant="secondary" onClick={() => openEditForm(r)}>
+                  แก้ไข
+                </Button>
+                <Button variant="danger" onClick={() => handleDeleteClick(r)}>
+                  ลบ
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Modal open={showForm} onClose={() => setShowForm(false)}>
+        <p className="text-lg font-semibold text-text-primary">
+          {editing ? "แก้ไขห้องประชุม" : "เพิ่มห้องใหม่"}
+        </p>
+        <div className="mt-3 space-y-3">
+          <input
+            type="text"
+            value={formName}
+            onChange={(e) => setFormName(e.target.value)}
+            placeholder="ชื่อห้อง"
+            className="w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+          />
+          <input
+            type="number"
+            value={formCapacity}
+            onChange={(e) => setFormCapacity(e.target.value)}
+            placeholder="จำนวนที่นั่ง"
+            className="w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+          />
+          <select
+            value={formStatus}
+            onChange={(e) =>
+              setFormStatus(
+                e.target.value as "available" | "busy" | "maintenance"
+              )
+            }
+            className="w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+          >
+            <option value="available">ว่าง</option>
+            <option value="busy">ไม่ว่าง</option>
+            <option value="maintenance">ปิดปรับปรุง</option>
+          </select>
+          <input
+            type="text"
+            value={formEquipment}
+            onChange={(e) => setFormEquipment(e.target.value)}
+            placeholder="อุปกรณ์ (คั่นด้วยจุลภาค เช่น projector, whiteboard)"
+            className="w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+          />
+        </div>
+        {formError && (
+          <p className="mt-2 text-sm text-danger-text">{formError}</p>
+        )}
+        <div className="mt-4 flex gap-3">
+          <Button variant="secondary" onClick={() => setShowForm(false)}>
+            ยกเลิก
+          </Button>
+          <Button onClick={handleSubmitForm} disabled={submitting}>
+            {submitting ? "กำลังบันทึก..." : "บันทึก"}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal open={deleteTarget !== null} onClose={() => setDeleteTarget(null)}>
+        {deleteTarget && (
+          <>
             <p className="text-lg font-semibold text-text-primary">
               ยืนยันการลบห้อง
             </p>
@@ -326,25 +310,21 @@ export default function DashboardRoomsPage() {
               {deleteTarget.name}
             </p>
             <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
+              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="primary"
+                className="bg-danger-solid hover:bg-danger-solid"
                 onClick={handleConfirmDelete}
                 disabled={submitting}
-                className="rounded-sm bg-danger-solid px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
               >
                 {submitting ? "กำลังลบ..." : "ยืนยันลบ"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
