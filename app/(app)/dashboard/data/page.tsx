@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 
 type Dataset = "bookings" | "approval_history" | "users";
 
@@ -217,7 +220,7 @@ export default function DashboardDataPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         จัดการข้อมูล
       </h1>
@@ -226,7 +229,7 @@ export default function DashboardDataPage() {
         <p className="mt-4 text-sm text-danger-text">{loadError}</p>
       )}
 
-      <div className="mt-6 rounded-lg border border-neutral-200 bg-surface-card p-5">
+      <Card className="mt-6">
         <p className="font-medium text-text-primary">Export ข้อมูล</p>
         {exportError && (
           <p className="mt-2 text-sm text-danger-text">{exportError}</p>
@@ -234,23 +237,22 @@ export default function DashboardDataPage() {
         <div className="mt-3 flex flex-wrap gap-3">
           {(["bookings", "approval_history", "users"] as Dataset[]).map(
             (dataset) => (
-              <button
+              <Button
                 key={dataset}
-                type="button"
+                variant="secondary"
                 onClick={() => handleExport(dataset)}
                 disabled={exportingDataset === dataset}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
               >
                 {exportingDataset === dataset
                   ? "กำลังสร้างไฟล์..."
                   : `Export ${DATASET_LABEL[dataset]} (CSV)`}
-              </button>
+              </Button>
             )
           )}
         </div>
-      </div>
+      </Card>
 
-      <div className="mt-6 rounded-lg border border-neutral-200 bg-surface-card p-5">
+      <Card className="mt-6">
         <p className="font-medium text-text-primary">Retention Settings</p>
         <div className="mt-3 space-y-3">
           <div>
@@ -298,17 +300,16 @@ export default function DashboardDataPage() {
             {retentionSuccess}
           </p>
         )}
-        <button
-          type="button"
+        <Button
           onClick={handleRetentionSubmit}
           disabled={retentionSubmitting}
-          className="mt-3 rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
+          className="mt-3"
         >
           {retentionSubmitting ? "กำลังบันทึก..." : "บันทึกการตั้งค่า"}
-        </button>
-      </div>
+        </Button>
+      </Card>
 
-      <div className="mt-6 rounded-lg border border-danger-border bg-danger-surface p-5">
+      <div className="mt-6 rounded-lg border border-danger-border bg-danger-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised">
         <p className="font-medium text-danger-text">Danger Zone</p>
         <p className="mt-1 text-sm text-danger-text">
           การกระทำในส่วนนี้ไม่สามารถย้อนกลับได้
@@ -319,46 +320,44 @@ export default function DashboardDataPage() {
         {cleanupSuccess && (
           <p className="mt-2 text-sm text-success-text">{cleanupSuccess}</p>
         )}
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          className="mt-3 bg-danger-solid hover:bg-danger-solid"
           onClick={() => setCleanupConfirmOpen(true)}
-          className="mt-3 rounded-sm bg-danger-solid px-4 py-2 text-sm font-medium text-text-on-primary"
         >
           ล้าง log เก่าทันที
-        </button>
+        </Button>
       </div>
 
-      {cleanupConfirmOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
-            <p className="text-lg font-semibold text-text-primary">
-              ยืนยันการล้าง log เก่า
-            </p>
-            <p className="mt-2 text-sm text-text-secondary">
-              การกระทำนี้จะลบ Activity Log และ Integration Log
-              ที่เก่าเกินระยะเวลาที่ตั้งไว้ถาวร กู้คืนไม่ได้
-              (ไม่กระทบประวัติการอนุมัติและการยกเลิก ซึ่งเก็บถาวรเสมอ)
-            </p>
-            <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setCleanupConfirmOpen(false)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmCleanup}
-                disabled={cleanupSubmitting}
-                className="rounded-sm bg-danger-solid px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
-              >
-                {cleanupSubmitting ? "กำลังลบ..." : "ยืนยันลบ"}
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={cleanupConfirmOpen}
+        onClose={() => setCleanupConfirmOpen(false)}
+      >
+        <p className="text-lg font-semibold text-text-primary">
+          ยืนยันการล้าง log เก่า
+        </p>
+        <p className="mt-2 text-sm text-text-secondary">
+          การกระทำนี้จะลบ Activity Log และ Integration Log
+          ที่เก่าเกินระยะเวลาที่ตั้งไว้ถาวร กู้คืนไม่ได้
+          (ไม่กระทบประวัติการอนุมัติและการยกเลิก ซึ่งเก็บถาวรเสมอ)
+        </p>
+        <div className="mt-4 flex gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => setCleanupConfirmOpen(false)}
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            variant="primary"
+            className="bg-danger-solid hover:bg-danger-solid"
+            onClick={handleConfirmCleanup}
+            disabled={cleanupSubmitting}
+          >
+            {cleanupSubmitting ? "กำลังลบ..." : "ยืนยันลบ"}
+          </Button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
