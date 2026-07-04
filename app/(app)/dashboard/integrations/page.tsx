@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 
 type ServiceName =
   | "make_com"
@@ -138,7 +141,7 @@ export default function DashboardIntegrationsPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         Integration Health
       </h1>
@@ -153,10 +156,7 @@ export default function DashboardIntegrationsPage() {
           const referenceLimit = REFERENCE_LIMIT[service];
 
           return (
-            <div
-              key={service}
-              className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-            >
+            <Card key={service}>
               <p className="font-medium text-text-primary">
                 {SERVICE_LABEL[service]}
               </p>
@@ -177,7 +177,7 @@ export default function DashboardIntegrationsPage() {
                   {referenceLimit}
                 </p>
               )}
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -213,13 +213,8 @@ export default function DashboardIntegrationsPage() {
 
       <div className="mt-4 space-y-3">
         {failedLogs.map((log) => (
-          <div
-            key={log.id}
-            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-          >
-            <span className="inline-block rounded-pill bg-danger-surface px-2.5 py-0.5 text-xs font-semibold text-danger-text">
-              {SERVICE_LABEL[log.service]}
-            </span>
+          <Card key={log.id}>
+            <Badge tone="danger">{SERVICE_LABEL[log.service]}</Badge>
             {log.error_detail && (
               <p className="mt-2 text-sm text-text-secondary">
                 {log.error_detail}
@@ -228,30 +223,28 @@ export default function DashboardIntegrationsPage() {
             <p className="mt-1 text-sm text-text-secondary">
               {new Date(log.created_at).toLocaleString("th-TH")}
             </p>
-          </div>
+          </Card>
         ))}
       </div>
 
       <div className="mt-4 flex items-center justify-between">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setPage((p) => Math.max(0, p - 1))}
           disabled={page === 0}
-          className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
         >
           ก่อนหน้า
-        </button>
+        </Button>
         <span className="text-sm text-text-secondary">
           หน้า {page + 1} / {totalPages}
         </span>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setPage((p) => p + 1)}
           disabled={page + 1 >= totalPages}
-          className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
         >
           ถัดไป
-        </button>
+        </Button>
       </div>
     </div>
   );
