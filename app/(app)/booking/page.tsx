@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type BookingConfig = {
   office_start_hour: number;
@@ -189,7 +192,7 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">จองห้องประชุม</h1>
 
       {step === 1 && (
@@ -200,7 +203,7 @@ export default function BookingPage() {
             </p>
           )}
 
-          <div className="rounded-lg border border-neutral-200 bg-surface-card p-5">
+          <Card>
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="flex flex-col gap-1 text-sm text-text-secondary">
                 วันที่
@@ -241,21 +244,28 @@ export default function BookingPage() {
               </p>
             )}
 
-            <button
-              type="button"
+            <Button
               onClick={handleSearch}
               disabled={!date || !startTime || !endTime || isHoliday || searching}
-              className="mt-4 rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
+              className="mt-4"
             >
               {searching ? "กำลังค้นหา..." : "ค้นหาห้องว่าง"}
-            </button>
+            </Button>
 
             {searchError && (
               <p className="mt-3 text-sm text-danger-text">{searchError}</p>
             )}
-          </div>
+          </Card>
 
-          {hasSearched && (
+          {searching && (
+            <div className="space-y-2">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          )}
+
+          {!searching && hasSearched && (
             <div className="space-y-2">
               {rooms.map((room) => {
                 const unavailable = unavailableRoomIds.has(room.id);
@@ -265,8 +275,10 @@ export default function BookingPage() {
                     type="button"
                     disabled={unavailable}
                     onClick={() => handleSelectRoom(room)}
-                    className={`w-full rounded-lg border border-neutral-200 bg-surface-card p-4 text-left ${
-                      unavailable ? "opacity-40" : "hover:bg-neutral-50"
+                    className={`w-full rounded-lg border border-neutral-200 bg-surface-card p-4 text-left shadow-card transition-shadow duration-150 ${
+                      unavailable
+                        ? "opacity-40"
+                        : "hover:bg-neutral-50 hover:shadow-raised"
                     }`}
                   >
                     <p className="font-medium text-text-primary">{room.name}</p>
@@ -283,7 +295,7 @@ export default function BookingPage() {
       )}
 
       {step === 2 && selectedRoom && !refId && (
-        <div className="mt-6 space-y-4 rounded-lg border border-neutral-200 bg-surface-card p-5">
+        <Card className="mt-6 space-y-4">
           <p className="text-sm text-text-secondary">
             ห้อง: {selectedRoom.name} (ความจุ {selectedRoom.capacity} คน)
           </p>
@@ -328,29 +340,23 @@ export default function BookingPage() {
           )}
 
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleBackToSearch}
-              className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-            >
+            <Button variant="secondary" onClick={handleBackToSearch}>
               กลับไปเลือกห้องใหม่
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={handleSubmit}
               disabled={
                 !title || !activity || !attendees || attendeesExceedsCapacity || submitting
               }
-              className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
             >
               {submitting ? "กำลังบันทึก..." : "ยืนยันการจอง"}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {refId && (
-        <div className="mt-6 rounded-lg border border-success-accent bg-success-surface p-5">
+        <div className="mt-6 rounded-lg border border-success-accent bg-success-surface p-5 shadow-card">
           <p className="font-medium text-success-text">จองห้องสำเร็จ</p>
           <p className="mt-1 text-sm text-success-text">
             หมายเลขอ้างอิง: {refId}
