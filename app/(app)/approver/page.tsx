@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type PendingBooking = {
   id: string;
@@ -166,7 +170,7 @@ export default function ApproverPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         คำขออนุมัติ
       </h1>
@@ -174,6 +178,13 @@ export default function ApproverPage() {
       {loadError && <p className="mt-4 text-sm text-danger-text">{loadError}</p>}
       {actionError && (
         <p className="mt-4 text-sm text-danger-text">{actionError}</p>
+      )}
+
+      {loading && (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
       )}
 
       {!loading && myStep === null && !loadError && (
@@ -189,50 +200,48 @@ export default function ApproverPage() {
       )}
 
       <div className="mt-4 space-y-3">
-        {bookings.map((b) => {
-          const urgent = waitingMinutes(b.created_at) > 120;
-          return (
-            <div
-              key={b.id}
-              className={`rounded-lg border bg-surface-card p-5 ${
-                urgent ? "border-warning-border border-[1.5px]" : "border-neutral-200"
-              }`}
-            >
-              <p className="font-medium text-text-primary">{b.title}</p>
-              <p className="text-sm text-text-secondary">
-                {b.ref_id} — ห้อง {b.room_name} — ผู้จอง {b.requester_name}
-              </p>
-              <p className="text-sm text-text-secondary">
-                ผู้เข้าร่วม {b.attendees} คน
-              </p>
-              <div className="mt-3 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setConfirmTarget({ booking: b, action: "approved" })
-                  }
-                  className="rounded-sm bg-success-solid px-4 py-2 text-sm font-medium text-text-on-primary"
-                >
-                  อนุมัติ
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setConfirmTarget({ booking: b, action: "rejected" })
-                  }
-                  className="rounded-sm border border-danger-border bg-danger-surface px-4 py-2 text-sm font-medium text-danger-text"
-                >
-                  ปฏิเสธ
-                </button>
-              </div>
-            </div>
-          );
-        })}
+        {!loading &&
+          bookings.map((b) => {
+            const urgent = waitingMinutes(b.created_at) > 120;
+            return (
+              <Card
+                key={b.id}
+                className={urgent ? "border-warning-border border-[1.5px]" : ""}
+              >
+                <p className="font-medium text-text-primary">{b.title}</p>
+                <p className="text-sm text-text-secondary">
+                  {b.ref_id} — ห้อง {b.room_name} — ผู้จอง {b.requester_name}
+                </p>
+                <p className="text-sm text-text-secondary">
+                  ผู้เข้าร่วม {b.attendees} คน
+                </p>
+                <div className="mt-3 flex gap-3">
+                  <Button
+                    variant="primary"
+                    className="bg-success-solid hover:bg-success-solid"
+                    onClick={() =>
+                      setConfirmTarget({ booking: b, action: "approved" })
+                    }
+                  >
+                    อนุมัติ
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() =>
+                      setConfirmTarget({ booking: b, action: "rejected" })
+                    }
+                  >
+                    ปฏิเสธ
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
       </div>
 
-      {confirmTarget && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
+      <Modal open={confirmTarget !== null} onClose={() => setConfirmTarget(null)}>
+        {confirmTarget && (
+          <>
             <p className="text-lg font-semibold text-text-primary">
               ยืนยันการ{confirmTarget.action === "approved" ? "อนุมัติ" : "ปฏิเสธ"}
             </p>
@@ -240,25 +249,16 @@ export default function ApproverPage() {
               {confirmTarget.booking.title} ({confirmTarget.booking.ref_id})
             </p>
             <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmTarget(null)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
+              <Button variant="secondary" onClick={() => setConfirmTarget(null)}>
                 ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={submitting}
-                className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
-              >
+              </Button>
+              <Button onClick={handleConfirm} disabled={submitting}>
                 {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
