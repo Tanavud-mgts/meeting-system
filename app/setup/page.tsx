@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 type Room = {
   id: string;
@@ -214,31 +216,27 @@ export default function SetupWizardPage() {
   const totalRooms = rooms.length;
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         ตั้งค่าระบบเริ่มต้น
       </h1>
       <p className="mt-1 text-sm text-text-secondary">ขั้นตอน {step} / 4</p>
 
       {step === 1 && (
-        <div className="mt-6 rounded-lg border border-neutral-200 bg-surface-card p-5">
+        <Card className="mt-6">
           <p className="text-text-primary">
             ยินดีต้อนรับสู่ระบบจองห้องประชุม LPRU ก่อนเริ่มใช้งาน
             กรุณาตั้งค่าเริ่มต้น 3 ขั้นตอน ได้แก่ เพิ่มห้องประชุม, กำหนด
             Approval Chain, และเวลาทำการ
           </p>
-          <button
-            type="button"
-            onClick={() => setStep(2)}
-            className="mt-4 rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary"
-          >
+          <Button onClick={() => setStep(2)} className="mt-4">
             เริ่มต้น
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {step === 2 && (
-        <div className="mt-6 rounded-lg border border-neutral-200 bg-surface-card p-5">
+        <Card className="mt-6">
           <p className="font-medium text-text-primary">เพิ่มห้องประชุม</p>
 
           {roomsLoadError && (
@@ -272,41 +270,27 @@ export default function SetupWizardPage() {
               onChange={(e) => setRoomCapacity(e.target.value)}
               className="w-1/3 rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
             />
-            <button
-              type="button"
-              onClick={handleAddRoom}
-              disabled={addingRoom}
-              className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
-            >
+            <Button variant="secondary" onClick={handleAddRoom} disabled={addingRoom}>
               {addingRoom ? "กำลังเพิ่ม..." : "เพิ่ม"}
-            </button>
+            </Button>
           </div>
           {roomFormError && (
             <p className="mt-2 text-sm text-danger-text">{roomFormError}</p>
           )}
 
           <div className="mt-4 flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-            >
+            <Button variant="secondary" onClick={() => setStep(1)}>
               ย้อนกลับ
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              disabled={totalRooms === 0}
-              className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
-            >
+            </Button>
+            <Button onClick={() => setStep(3)} disabled={totalRooms === 0}>
               ถัดไป
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {step === 3 && (
-        <div className="mt-6 rounded-lg border border-neutral-200 bg-surface-card p-5">
+        <Card className="mt-6">
           <p className="font-medium text-text-primary">Approval Chain</p>
 
           {configLoadError && (
@@ -368,26 +352,18 @@ export default function SetupWizardPage() {
           </div>
 
           <div className="mt-4 flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep(2)}
-              className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-            >
+            <Button variant="secondary" onClick={() => setStep(2)}>
               ย้อนกลับ
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep(4)}
-              className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary"
-            >
+            </Button>
+            <Button onClick={() => setStep(4)}>
               ถัดไป
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {step === 4 && (
-        <div className="mt-6 rounded-lg border border-neutral-200 bg-surface-card p-5">
+        <Card className="mt-6">
           <p className="font-medium text-text-primary">เวลาทำการ</p>
 
           <div className="mt-3 flex gap-3">
@@ -427,13 +403,9 @@ export default function SetupWizardPage() {
               onChange={(e) => setNewHoliday(e.target.value)}
               className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
             />
-            <button
-              type="button"
-              onClick={addHoliday}
-              className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-            >
+            <Button variant="secondary" onClick={addHoliday}>
               เพิ่ม
-            </button>
+            </Button>
           </div>
           <div className="mt-3 space-y-2">
             {holidays.map((h) => (
@@ -458,23 +430,14 @@ export default function SetupWizardPage() {
           )}
 
           <div className="mt-4 flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-            >
+            <Button variant="secondary" onClick={() => setStep(3)}>
               ย้อนกลับ
-            </button>
-            <button
-              type="button"
-              onClick={handleFinish}
-              disabled={finishing}
-              className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
-            >
+            </Button>
+            <Button onClick={handleFinish} disabled={finishing}>
               {finishing ? "กำลังบันทึก..." : "เสร็จสิ้น"}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );
