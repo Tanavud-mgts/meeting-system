@@ -3,7 +3,7 @@
 เอกสารสรุป design token (สี · spacing · typography) ที่สกัดจากทั้ง 3 หน้า: หน้าจอง, ภาพรวมปฏิทิน และคำขออนุมัติ
 ไฟล์ที่เกี่ยวข้อง: `tokens/design-tokens.json` (W3C DTCG) · `tokens/tokens.css` (CSS variables) · `Design Tokens.dc.html` (หน้าแสดงผล)
 
-ฟอนต์หลัก: **Sarabun** (รองรับภาษาไทย) · โทนหลัก teal น้ำเงิน-เขียวสุภาพแบบราชการ
+ฟอนต์หลัก: **Sarabun** (รองรับภาษาไทย) · โทนหลัก เขียว-เทอร์คอยสดใสแบบ SaaS สมัยใหม่
 
 ---
 
