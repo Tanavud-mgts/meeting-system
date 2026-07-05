@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type BookingRow = {
   id: string;
@@ -140,7 +144,7 @@ export default function ProfileBookingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         ประวัติการจองของฉัน
       </h1>
@@ -158,46 +162,52 @@ export default function ProfileBookingsPage() {
         </p>
       )}
 
-      <div className="mt-4 space-y-3">
-        {bookings.map((b) => (
-          <div
-            key={b.id}
-            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-          >
-            <p className="font-medium text-text-primary">{b.title}</p>
-            <p className="text-sm text-text-secondary">
-              {b.ref_id} — ห้อง {b.room_name}
-            </p>
-            <div className="mt-1">
-              <Badge tone={STATUS_TONE[b.final_status] ?? "neutral"}>
-                {STATUS_LABEL[b.final_status] ?? b.final_status}
-              </Badge>
-            </div>
-            {b.final_status === "pending" && (
-              <button
-                type="button"
-                onClick={() => openCancelDialog(b)}
-                className="mt-3 rounded-sm border border-danger-border bg-danger-surface px-4 py-2 text-sm font-medium text-danger-text"
-              >
-                ยกเลิกการจอง
-              </button>
-            )}
-            {b.final_status === "approved" && (
-              <button
-                type="button"
-                onClick={() => openCancelDialog(b)}
-                className="mt-3 rounded-sm border border-danger-border bg-danger-surface px-4 py-2 text-sm font-medium text-danger-text"
-              >
-                ขอยกเลิกการจอง
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
+      {loading && (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      )}
 
-      {cancelTarget && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
+      {!loading && (
+        <div className="mt-4 space-y-3">
+          {bookings.map((b) => (
+            <Card key={b.id}>
+              <p className="font-medium text-text-primary">{b.title}</p>
+              <p className="text-sm text-text-secondary">
+                {b.ref_id} — ห้อง {b.room_name}
+              </p>
+              <div className="mt-1">
+                <Badge tone={STATUS_TONE[b.final_status] ?? "neutral"}>
+                  {STATUS_LABEL[b.final_status] ?? b.final_status}
+                </Badge>
+              </div>
+              {b.final_status === "pending" && (
+                <Button
+                  variant="danger"
+                  onClick={() => openCancelDialog(b)}
+                  className="mt-3"
+                >
+                  ยกเลิกการจอง
+                </Button>
+              )}
+              {b.final_status === "approved" && (
+                <Button
+                  variant="danger"
+                  onClick={() => openCancelDialog(b)}
+                  className="mt-3"
+                >
+                  ขอยกเลิกการจอง
+                </Button>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Modal open={cancelTarget !== null} onClose={() => setCancelTarget(null)}>
+        {cancelTarget && (
+          <>
             <p className="text-lg font-semibold text-text-primary">
               {cancelTarget.final_status === "pending"
                 ? "ยืนยันการยกเลิกการจอง"
@@ -217,25 +227,16 @@ export default function ProfileBookingsPage() {
               <p className="mt-1 text-sm text-danger-text">{reasonError}</p>
             )}
             <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setCancelTarget(null)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
+              <Button variant="secondary" onClick={() => setCancelTarget(null)}>
                 ปิด
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmCancel}
-                disabled={submitting}
-                className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
-              >
+              </Button>
+              <Button onClick={handleConfirmCancel} disabled={submitting}>
                 {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
