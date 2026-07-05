@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type ActivityRow = {
   id: string;
@@ -92,7 +95,7 @@ export default function DashboardActivityPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         ประวัติการทำงานรวม
       </h1>
@@ -122,49 +125,53 @@ export default function DashboardActivityPage() {
         </p>
       )}
 
-      <div className="mt-4 space-y-3">
-        {entries.map((e) => (
-          <div
-            key={e.id}
-            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-          >
-            <p className="font-medium text-text-primary">
-              {getEventLabel(e.event_type, e.sub_type)}
-            </p>
-            <p className="text-sm text-text-secondary">
-              โดย {e.actor_name}
-              {e.related_ref && ` — ${e.related_ref}`}
-            </p>
-            {e.detail && (
-              <p className="text-sm text-text-secondary">{e.detail}</p>
-            )}
-            <p className="mt-1 text-sm text-text-secondary">
-              {new Date(e.occurred_at).toLocaleString("th-TH")}
-            </p>
-          </div>
-        ))}
-      </div>
+      {loading && (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      )}
+
+      {!loading && (
+        <div className="mt-4 space-y-3">
+          {entries.map((e) => (
+            <Card key={e.id}>
+              <p className="font-medium text-text-primary">
+                {getEventLabel(e.event_type, e.sub_type)}
+              </p>
+              <p className="text-sm text-text-secondary">
+                โดย {e.actor_name}
+                {e.related_ref && ` — ${e.related_ref}`}
+              </p>
+              {e.detail && (
+                <p className="text-sm text-text-secondary">{e.detail}</p>
+              )}
+              <p className="mt-1 text-sm text-text-secondary">
+                {new Date(e.occurred_at).toLocaleString("th-TH")}
+              </p>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 flex items-center justify-between">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setPage((p) => Math.max(0, p - 1))}
           disabled={page === 0}
-          className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
         >
           ก่อนหน้า
-        </button>
+        </Button>
         <span className="text-sm text-text-secondary">
           หน้า {page + 1} / {totalPages}
         </span>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setPage((p) => p + 1)}
           disabled={page + 1 >= totalPages}
-          className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
         >
           ถัดไป
-        </button>
+        </Button>
       </div>
     </div>
   );
