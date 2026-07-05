@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type CancelRequestRow = {
   id: string;
@@ -97,7 +101,7 @@ export default function CancelRequestsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         คำขอยกเลิกการจอง
       </h1>
@@ -115,46 +119,51 @@ export default function CancelRequestsPage() {
         </p>
       )}
 
-      <div className="mt-4 space-y-3">
-        {requests.map((r) => (
-          <div
-            key={r.id}
-            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-          >
-            <p className="font-medium text-text-primary">{r.title}</p>
-            <p className="text-sm text-text-secondary">
-              {r.ref_id} — ห้อง {r.room_name} — ผู้จอง {r.requester_name}
-            </p>
-            <p className="mt-2 text-sm text-text-primary">
-              เหตุผล: {r.cancellation_reason ?? "-"}
-            </p>
-            <div className="mt-3 flex gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  setConfirmTarget({ booking: r, decision: "approve" })
-                }
-                className="rounded-sm bg-success-solid px-4 py-2 text-sm font-medium text-text-on-primary"
-              >
-                อนุมัติการยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setConfirmTarget({ booking: r, decision: "reject" })
-                }
-                className="rounded-sm border border-danger-border bg-danger-surface px-4 py-2 text-sm font-medium text-danger-text"
-              >
-                ปฏิเสธคำขอ
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {loading && (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      )}
 
-      {confirmTarget && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
+      {!loading && (
+        <div className="mt-4 space-y-3">
+          {requests.map((r) => (
+            <Card key={r.id}>
+              <p className="font-medium text-text-primary">{r.title}</p>
+              <p className="text-sm text-text-secondary">
+                {r.ref_id} — ห้อง {r.room_name} — ผู้จอง {r.requester_name}
+              </p>
+              <p className="mt-2 text-sm text-text-primary">
+                เหตุผล: {r.cancellation_reason ?? "-"}
+              </p>
+              <div className="mt-3 flex gap-3">
+                <Button
+                  variant="primary"
+                  className="bg-success-solid hover:bg-success-solid"
+                  onClick={() =>
+                    setConfirmTarget({ booking: r, decision: "approve" })
+                  }
+                >
+                  อนุมัติการยกเลิก
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() =>
+                    setConfirmTarget({ booking: r, decision: "reject" })
+                  }
+                >
+                  ปฏิเสธคำขอ
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Modal open={confirmTarget !== null} onClose={() => setConfirmTarget(null)}>
+        {confirmTarget && (
+          <>
             <p className="text-lg font-semibold text-text-primary">
               ยืนยันการ
               {confirmTarget.decision === "approve"
@@ -165,25 +174,16 @@ export default function CancelRequestsPage() {
               {confirmTarget.booking.title} ({confirmTarget.booking.ref_id})
             </p>
             <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmTarget(null)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
+              <Button variant="secondary" onClick={() => setConfirmTarget(null)}>
                 ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={submitting}
-                className="rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
-              >
+              </Button>
+              <Button onClick={handleConfirm} disabled={submitting}>
                 {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
