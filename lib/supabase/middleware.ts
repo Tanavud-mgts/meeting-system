@@ -55,6 +55,31 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Domain restriction: only @g.lpru.ac.th accounts may use the system. In
+  // development, @test.local test accounts are also allowed — NODE_ENV MUST be
+  // "production" in production (see CLAUDE.md) so this bypass never leaks there.
+  // Applied to every authenticated request so a wrong-domain session cannot
+  // reach any route. Signing out here would otherwise be discarded by the
+  // redirect, so the cleared cookies are copied onto the redirect response.
+  if (user) {
+    const email = user.email ?? "";
+    const allowed =
+      email.endsWith("@g.lpru.ac.th") ||
+      (process.env.NODE_ENV === "development" &&
+        email.endsWith("@test.local"));
+
+    if (!allowed) {
+      await supabase.auth.signOut();
+      const redirect = NextResponse.redirect(
+        new URL("/login?error=domain", request.url)
+      );
+      for (const cookie of response.cookies.getAll()) {
+        redirect.cookies.set(cookie);
+      }
+      return redirect;
+    }
+  }
+
   const requiredRoles = matchRoute(request.nextUrl.pathname);
 
   if (requiredRoles) {
