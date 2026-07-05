@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "seed:test-users": "tsx --env-file=.env.local scripts/create-test-users.ts"
   },
   "dependencies": {
@@ -28,6 +29,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
     "typescript": "^5",
+    "vitest": "^4.1.9",
     "ws": "^8.21.0"
   }
 }
