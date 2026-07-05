@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type BookingRow = {
   id: string;
@@ -177,7 +181,7 @@ export default function DashboardBookingsPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         การจองทั้งหมด
       </h1>
@@ -208,59 +212,63 @@ export default function DashboardBookingsPage() {
         <p className="mt-4 text-sm text-text-secondary">ไม่พบรายการจอง</p>
       )}
 
-      <div className="mt-4 space-y-3">
-        {bookings.map((b) => (
-          <div
-            key={b.id}
-            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-          >
-            <p className="font-medium text-text-primary">{b.title}</p>
-            <p className="text-sm text-text-secondary">
-              {b.ref_id} — ห้อง {b.room_name} — ผู้จอง {b.requester_name}
-            </p>
-            <div className="mt-1">
-              <Badge tone={STATUS_TONE[b.final_status] ?? "neutral"}>
-                {STATUS_LABEL[b.final_status] ?? b.final_status}
-              </Badge>
-            </div>
-            {!TERMINAL_STATUSES.includes(b.final_status) && (
-              <button
-                type="button"
-                onClick={() => openCancelDialog(b)}
-                className="mt-3 rounded-sm border border-danger-border bg-danger-surface px-4 py-2 text-sm font-medium text-danger-text"
-              >
-                ยกเลิกโดย Admin
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
+      {loading && (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      )}
+
+      {!loading && (
+        <div className="mt-4 space-y-3">
+          {bookings.map((b) => (
+            <Card key={b.id}>
+              <p className="font-medium text-text-primary">{b.title}</p>
+              <p className="text-sm text-text-secondary">
+                {b.ref_id} — ห้อง {b.room_name} — ผู้จอง {b.requester_name}
+              </p>
+              <div className="mt-1">
+                <Badge tone={STATUS_TONE[b.final_status] ?? "neutral"}>
+                  {STATUS_LABEL[b.final_status] ?? b.final_status}
+                </Badge>
+              </div>
+              {!TERMINAL_STATUSES.includes(b.final_status) && (
+                <Button
+                  variant="danger"
+                  onClick={() => openCancelDialog(b)}
+                  className="mt-3"
+                >
+                  ยกเลิกโดย Admin
+                </Button>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 flex items-center justify-between">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setPage((p) => Math.max(0, p - 1))}
           disabled={page === 0}
-          className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
         >
           ก่อนหน้า
-        </button>
+        </Button>
         <span className="text-sm text-text-secondary">
           หน้า {page + 1} / {totalPages}
         </span>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setPage((p) => p + 1)}
           disabled={page + 1 >= totalPages}
-          className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary disabled:opacity-50"
         >
           ถัดไป
-        </button>
+        </Button>
       </div>
 
-      {cancelTarget && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/45 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl bg-surface-card p-6 shadow-modal">
+      <Modal open={cancelTarget !== null} onClose={() => setCancelTarget(null)}>
+        {cancelTarget && (
+          <>
             <p className="text-lg font-semibold text-text-primary">
               ยืนยันการยกเลิกโดย Admin
             </p>
@@ -278,25 +286,21 @@ export default function DashboardBookingsPage() {
               <p className="mt-1 text-sm text-danger-text">{reasonError}</p>
             )}
             <div className="mt-4 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setCancelTarget(null)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-sm text-text-secondary"
-              >
+              <Button variant="secondary" onClick={() => setCancelTarget(null)}>
                 ปิด
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="primary"
+                className="bg-danger-solid hover:bg-danger-solid"
                 onClick={handleConfirmCancel}
                 disabled={submitting}
-                className="rounded-sm bg-danger-solid px-4 py-2 text-sm font-medium text-text-on-primary disabled:opacity-50"
               >
                 {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
