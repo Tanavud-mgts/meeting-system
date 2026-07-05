@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Card } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type HistoryEntry = {
   id: string;
@@ -72,7 +74,7 @@ export default function ApproverHistoryPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
         ประวัติการทำงาน
       </h1>
@@ -85,26 +87,32 @@ export default function ApproverHistoryPage() {
         </p>
       )}
 
-      <div className="mt-4 space-y-3">
-        {entries.map((e) => (
-          <div
-            key={e.id}
-            className="rounded-lg border border-neutral-200 bg-surface-card p-5"
-          >
-            <p className="font-medium text-text-primary">
-              {e.booking_title} ({e.booking_ref_id})
-            </p>
-            <p className="text-sm text-text-secondary">
-              ขั้นที่ {e.step} —{" "}
-              {e.action === "approved" ? "อนุมัติ" : "ปฏิเสธ"} —{" "}
-              {new Date(e.acted_at).toLocaleString("th-TH")}
-            </p>
-            {e.note && (
-              <p className="mt-1 text-sm text-text-secondary">{e.note}</p>
-            )}
-          </div>
-        ))}
-      </div>
+      {loading && (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      )}
+
+      {!loading && (
+        <div className="mt-4 space-y-3">
+          {entries.map((e) => (
+            <Card key={e.id}>
+              <p className="font-medium text-text-primary">
+                {e.booking_title} ({e.booking_ref_id})
+              </p>
+              <p className="text-sm text-text-secondary">
+                ขั้นที่ {e.step} —{" "}
+                {e.action === "approved" ? "อนุมัติ" : "ปฏิเสธ"} —{" "}
+                {new Date(e.acted_at).toLocaleString("th-TH")}
+              </p>
+              {e.note && (
+                <p className="mt-1 text-sm text-text-secondary">{e.note}</p>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
