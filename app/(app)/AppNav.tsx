@@ -3,10 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { SidebarItem } from "@/lib/nav";
 
-type NavItem = { href: string; label: string };
+function isActive(item: SidebarItem, pathname: string): boolean {
+  if (item.groupHrefs) return item.groupHrefs.includes(pathname);
+  return pathname === item.href;
+}
 
-export default function AppNav({ navItems }: { navItems: NavItem[] }) {
+function linkClass(active: boolean): string {
+  return `rounded-sm px-3 py-2 text-sm ${
+    active
+      ? "bg-neutral-100 font-medium text-text-primary"
+      : "text-text-secondary hover:bg-neutral-100"
+  }`;
+}
+
+export default function AppNav({ items }: { items: SidebarItem[] }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
 
@@ -18,11 +30,11 @@ export default function AppNav({ navItems }: { navItems: NavItem[] }) {
     <>
       <aside className="hidden w-[200px] shrink-0 border-r border-neutral-200 bg-surface-card p-4 md:block">
         <nav className="flex flex-col gap-1">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-neutral-100"
+              className={linkClass(isActive(item, pathname))}
             >
               {item.label}
             </Link>
@@ -66,12 +78,12 @@ export default function AppNav({ navItems }: { navItems: NavItem[] }) {
               </button>
             </div>
             <div className="flex flex-col gap-1">
-              {navItems.map((item) => (
+              {items.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setDrawerOpen(false)}
-                  className="rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-neutral-100"
+                  className={linkClass(isActive(item, pathname))}
                 >
                   {item.label}
                 </Link>
@@ -82,11 +94,15 @@ export default function AppNav({ navItems }: { navItems: NavItem[] }) {
       )}
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-center justify-around border-t border-neutral-200 bg-surface-card pb-[env(safe-area-inset-bottom)] md:hidden">
-        {navItems.slice(0, 4).map((item) => (
+        {items.slice(0, 4).map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="text-xs text-text-secondary"
+            className={`text-xs ${
+              isActive(item, pathname)
+                ? "font-medium text-text-primary"
+                : "text-text-secondary"
+            }`}
           >
             {item.label}
           </Link>
