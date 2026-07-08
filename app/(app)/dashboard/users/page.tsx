@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Avatar } from "@/components/ui/Avatar";
 
 type UserRow = {
   id: string;
@@ -13,6 +14,8 @@ type UserRow = {
   email: string;
   role: "user" | "approver" | "admin";
   department: string | null;
+  phone: string | null;
+  staff_id: string | null;
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -42,7 +45,7 @@ export default function DashboardUsersPage() {
     const [usersRes, configRes] = await Promise.all([
       supabase
         .from("users")
-        .select("id, full_name, email, role, department")
+        .select("id, full_name, email, role, department, phone, staff_id")
         .order("full_name", { ascending: true }),
       supabase
         .from("system_config")
@@ -169,8 +172,20 @@ export default function DashboardUsersPage() {
         <div className="mt-4 space-y-3">
           {users.map((u) => (
             <Card key={u.id}>
-              <p className="font-medium text-text-primary">{u.full_name}</p>
-              <p className="text-sm text-text-secondary">{u.email}</p>
+              <div className="flex items-center gap-3">
+                <Avatar name={u.full_name} />
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-text-primary">
+                    {u.full_name}
+                  </p>
+                  <p className="truncate text-sm text-text-secondary">
+                    {u.email}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-sm text-text-secondary">
+                รหัสบุคลากร: {u.staff_id ?? "—"} · เบอร์โทร: {u.phone ?? "—"}
+              </p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <select
                   value={u.role}

@@ -6,12 +6,15 @@ import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Avatar } from "@/components/ui/Avatar";
 
 type Profile = {
   full_name: string;
   email: string;
   role: "user" | "approver" | "admin";
   department: string | null;
+  phone: string | null;
+  staff_id: string | null;
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -20,12 +23,29 @@ const ROLE_LABEL: Record<string, string> = {
   admin: "ผู้ดูแลระบบ",
 };
 
+type EditForm = {
+  full_name: string;
+  staff_id: string;
+  phone: string;
+  department: string;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<EditForm>({
+    full_name: "",
+    staff_id: "",
+    phone: "",
+    department: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -45,7 +65,7 @@ export default function ProfilePage() {
 
       const { data, error } = await supabase
         .from("users")
-        .select("full_name, email, role, department")
+        .select("full_name, email, role, department, phone, staff_id")
         .eq("id", user.id)
         .single();
 
@@ -61,6 +81,70 @@ export default function ProfilePage() {
     load();
   }, []);
 
+  function startEditing() {
+    if (!profile) return;
+    setForm({
+      full_name: profile.full_name,
+      staff_id: profile.staff_id ?? "",
+      phone: profile.phone ?? "",
+      department: profile.department ?? "",
+    });
+    setSaveError(null);
+    setEditing(true);
+  }
+
+  async function handleSave() {
+    if (form.full_name.trim().length === 0) {
+      setSaveError("กรุณากรอกชื่อ-นามสกุล");
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setSaveError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setSaving(false);
+      return;
+    }
+
+    // RLS "users: update own (role locked)" allows this because role is not set.
+    const { error } = await supabase
+      .from("users")
+      .update({
+        full_name: form.full_name.trim(),
+        staff_id: form.staff_id.trim() || null,
+        phone: form.phone.trim() || null,
+        department: form.department.trim() || null,
+      })
+      .eq("id", user.id);
+
+    setSaving(false);
+
+    if (error) {
+      setSaveError("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      return;
+    }
+
+    setProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            full_name: form.full_name.trim(),
+            staff_id: form.staff_id.trim() || null,
+            phone: form.phone.trim() || null,
+            department: form.department.trim() || null,
+          }
+        : prev
+    );
+    setEditing(false);
+  }
+
   async function handleSignOut() {
     setSigningOut(true);
     const supabase = createClient();
@@ -71,41 +155,151 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">โปรไฟล์</h1>
+      <h1 className="text-2xl font-semibold text-text-primary">โปรไฟล์ของฉัน</h1>
 
       {loadError && <p className="mt-4 text-sm text-danger-text">{loadError}</p>}
 
       {loading && (
         <div className="mt-4 space-y-3">
-          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-56 w-full" />
         </div>
       )}
 
       {!loading && profile && (
         <>
-          <Card className="mt-4">
-            <dl className="space-y-3">
-              <div>
-                <dt className="text-sm text-text-secondary">ชื่อ-นามสกุล</dt>
-                <dd className="text-text-primary">{profile.full_name}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-text-secondary">อีเมล</dt>
-                <dd className="text-text-primary">{profile.email}</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-text-secondary">บทบาท</dt>
-                <dd className="text-text-primary">
+          {/* Gradient header */}
+          <div className="mt-4 overflow-hidden rounded-lg shadow-card">
+            <div
+              className="flex items-center gap-4 p-5"
+              style={{ background: "var(--gradient-brand)" }}
+            >
+              <Avatar name={profile.full_name} size="lg" tone="inverse" />
+              <div className="min-w-0">
+                <p className="truncate text-lg font-semibold text-text-on-primary">
+                  {profile.full_name}
+                </p>
+                <p className="truncate text-sm text-text-on-primary opacity-90">
+                  {profile.email}
+                </p>
+                <span className="mt-2 inline-block rounded-pill bg-surface-card px-2.5 py-0.5 text-xs font-semibold text-brand-primary">
                   {ROLE_LABEL[profile.role] ?? profile.role}
-                </dd>
+                </span>
               </div>
-              <div>
-                <dt className="text-sm text-text-secondary">หน่วยงาน</dt>
-                <dd className="text-text-primary">
-                  {profile.department ?? "—"}
-                </dd>
-              </div>
-            </dl>
+            </div>
+          </div>
+
+          {/* Info / edit */}
+          <Card className="mt-4">
+            {!editing ? (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm text-text-secondary">ชื่อ-นามสกุล</p>
+                    <p className="text-text-primary">{profile.full_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-secondary">อีเมล</p>
+                    <p className="text-text-primary">{profile.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-secondary">รหัสบุคลากร</p>
+                    <p className="text-text-primary">
+                      {profile.staff_id ?? "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-secondary">เบอร์โทรศัพท์</p>
+                    <p className="text-text-primary">{profile.phone ?? "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-secondary">หน่วยงาน</p>
+                    <p className="text-text-primary">
+                      {profile.department ?? "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-secondary">บทบาท</p>
+                    <p className="text-text-primary">
+                      {ROLE_LABEL[profile.role] ?? profile.role}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Button onClick={startEditing}>แก้ไขข้อมูล</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1 text-sm text-text-secondary">
+                    ชื่อ-นามสกุล
+                    <input
+                      type="text"
+                      value={form.full_name}
+                      onChange={(e) =>
+                        setForm({ ...form, full_name: e.target.value })
+                      }
+                      className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm text-text-secondary">
+                    รหัสบุคลากร
+                    <input
+                      type="text"
+                      value={form.staff_id}
+                      onChange={(e) =>
+                        setForm({ ...form, staff_id: e.target.value })
+                      }
+                      className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm text-text-secondary">
+                    เบอร์โทรศัพท์
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={(e) =>
+                        setForm({ ...form, phone: e.target.value })
+                      }
+                      className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm text-text-secondary">
+                    หน่วยงาน
+                    <input
+                      type="text"
+                      value={form.department}
+                      onChange={(e) =>
+                        setForm({ ...form, department: e.target.value })
+                      }
+                      className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+                    />
+                  </label>
+                </div>
+
+                <p className="mt-3 text-xs text-text-secondary">
+                  อีเมลและบทบาทแก้ไขไม่ได้ (บทบาทเปลี่ยนโดยผู้ดูแลระบบเท่านั้น)
+                </p>
+
+                {saveError && (
+                  <p className="mt-2 text-sm text-danger-text">{saveError}</p>
+                )}
+
+                <div className="mt-4 flex gap-3">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setEditing(false)}
+                    disabled={saving}
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving ? "กำลังบันทึก..." : "บันทึก"}
+                  </Button>
+                </div>
+              </>
+            )}
           </Card>
 
           <Card className="mt-4">
