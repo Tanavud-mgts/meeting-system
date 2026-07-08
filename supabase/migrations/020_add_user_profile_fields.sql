@@ -6,22 +6,24 @@
 --
 -- รันใน Supabase SQL Editor (ไม่มี MCP) แบบเดียวกับ 018/019
 -- ADD COLUMN IF NOT EXISTS → รันซ้ำได้ปลอดภัย
+-- *ระบุ schema public. ให้ชัดทุกที่* กัน error 42P01 เมื่อ search_path
+--  ของ SQL Editor ไม่มี public
 -- ============================================================
 
-ALTER TABLE users ADD COLUMN IF NOT EXISTS phone    text;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS staff_id text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS phone    text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS staff_id text;
 
 -- ขยาย anonymize ให้ลบ phone + staff_id ด้วย (PDPA)
 -- หมายเหตุ: CREATE OR REPLACE จะล้าง proconfig (SET clauses) ของฟังก์ชันเดิม
 -- จึงต้อง re-pin `SET search_path = public` ไว้ (hardening จาก migration 016)
 -- ส่วน GRANT/REVOKE (migration 018) จะคงอยู่ข้าม REPLACE แต่ re-assert เพื่อความชัวร์
-CREATE OR REPLACE FUNCTION anonymize_user_on_delete_request(p_user_id uuid)
+CREATE OR REPLACE FUNCTION public.anonymize_user_on_delete_request(p_user_id uuid)
 RETURNS void
 LANGUAGE plpgsql
 SET search_path = public
 AS $$
 BEGIN
-  UPDATE users SET
+  UPDATE public.users SET
     full_name    = 'ผู้ใช้ที่ถูกลบ',
     email        = 'deleted-' || id || '@anonymized.local',
     line_user_id = NULL,
