@@ -108,4 +108,42 @@ export function buildNotification(
   };
 }
 
-// notifyAndLog + NotifyParams เติมใน Task 3 (append ต่อท้ายไฟล์นี้)
+export interface NotifyRecipient {
+  userId: string;
+}
+
+export interface NotifyParams {
+  eventKey: EventKey;
+  recipients: NotifyRecipient[];
+  variables: Record<string, string>;
+}
+
+// ★ Fire-and-Forget: insert แจ้งเตือน in-app รายผู้รับ ไม่ throw เด็ดขาด
+export async function notifyAndLog(
+  client: SupabaseClient,
+  params: NotifyParams
+): Promise<void> {
+  const { title, body, link } = buildNotification(params.eventKey, params.variables);
+
+  const tasks = params.recipients.map((r) =>
+    client.from("notifications").insert({
+      user_id: r.userId,
+      event_key: params.eventKey,
+      title,
+      body,
+      link,
+    })
+  );
+
+  const results = await Promise.allSettled(tasks);
+  results.forEach((res, i) => {
+    if (res.status === "rejected") {
+      console.error(`[notifyAndLog] insert ล้มเหลว (recipient ${i}):`, res.reason);
+    } else if (res.value && (res.value as { error?: unknown }).error) {
+      console.error(
+        `[notifyAndLog] insert error (recipient ${i}):`,
+        (res.value as { error?: unknown }).error
+      );
+    }
+  });
+}

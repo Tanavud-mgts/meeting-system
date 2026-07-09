@@ -4,7 +4,9 @@ import {
   formatThaiDate,
   formatThaiTimeRange,
   buildNotification,
+  notifyAndLog,
 } from "./notify.ts";
+import { makeClient, type DbCallContext } from "./mockClient.ts";
 
 describe("applyTemplate", () => {
   it("แทนที่ตัวแปรทั้งหมด", () => {
@@ -48,5 +50,50 @@ describe("buildNotification", () => {
       room: "ห้อง A", date: "15 ก.ค. 69", reason: "ห้องซ่อมบำรุง",
     });
     expect(n.body).toContain("เหตุผล: ห้องซ่อมบำรุง");
+  });
+});
+
+describe("notifyAndLog", () => {
+  const vars = { booker: "สมชาย", room: "ห้อง A", date: "15 ก.ค. 69", time: "09:00–12:00 น." };
+
+  it("insert 1 แถวต่อผู้รับ พร้อม title/body/link/event_key", async () => {
+    const { client, calls } = makeClient(() => ({}));
+    await notifyAndLog(client as never, {
+      eventKey: "booking_approved",
+      recipients: [{ userId: "u1" }, { userId: "u2" }],
+      variables: vars,
+    });
+    const inserts = calls.filter((c: DbCallContext) => c.table === "notifications" && c.op === "insert");
+    expect(inserts).toHaveLength(2);
+    expect(inserts[0].payload).toMatchObject({
+      user_id: "u1",
+      event_key: "booking_approved",
+      title: "✅ การจองได้รับอนุมัติแล้ว",
+      link: "/profile/bookings",
+    });
+    expect(inserts[1].payload).toMatchObject({ user_id: "u2" });
+  });
+
+  it("ไม่ throw แม้ทุก insert ล้มเหลว", async () => {
+    const { client } = makeClient(() => {
+      throw new Error("db down");
+    });
+    await expect(
+      notifyAndLog(client as never, {
+        eventKey: "booking_approved",
+        recipients: [{ userId: "u1" }],
+        variables: vars,
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  it("recipients ว่าง = ไม่ insert อะไร", async () => {
+    const { client, calls } = makeClient(() => ({}));
+    await notifyAndLog(client as never, {
+      eventKey: "booking_approved",
+      recipients: [],
+      variables: vars,
+    });
+    expect(calls).toHaveLength(0);
   });
 });
