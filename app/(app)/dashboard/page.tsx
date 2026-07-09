@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type Stats = {
   bookingPending: number;
@@ -20,6 +22,66 @@ type Stats = {
   pendingAdminApproval: number;
   pendingCancelDecision: number;
 };
+
+function formatCount(n: number): string {
+  return n.toLocaleString("th-TH");
+}
+
+function StatCard({
+  label,
+  value,
+  loading,
+}: {
+  label: string;
+  value: number;
+  loading: boolean;
+}) {
+  return (
+    <Card padding="p-4">
+      <p className="text-sm text-text-secondary">{label}</p>
+      {loading ? (
+        <Skeleton className="mt-1 h-7 w-10" />
+      ) : (
+        <p className="text-xl font-semibold text-text-primary">
+          {formatCount(value)}
+        </p>
+      )}
+    </Card>
+  );
+}
+
+function HighlightCard({
+  href,
+  label,
+  hint,
+  value,
+  loading,
+}: {
+  href: string;
+  label: string;
+  hint: string;
+  value: number;
+  loading: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col gap-0.5 rounded-lg border border-warning-border bg-warning-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm text-text-secondary">{label}</span>
+        <span className="text-xs text-warning-text opacity-85">{hint} →</span>
+      </div>
+      {loading ? (
+        <Skeleton className="mt-1 h-8 w-9 bg-warning-border/40" />
+      ) : (
+        <span className="text-2xl font-semibold text-warning-text">
+          {formatCount(value)}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 export default function DashboardOverviewPage() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -119,126 +181,119 @@ export default function DashboardOverviewPage() {
     loadStats();
   }, []);
 
+  const loading = stats === null && loadError === null;
+  // ระหว่างโหลดใช้ค่า 0 ชั่วคราว — Skeleton ทับอยู่แล้ว จึงไม่แสดงตัวเลขนี้จริง
+  const s: Stats =
+    stats ?? {
+      bookingPending: 0,
+      bookingApproved: 0,
+      bookingCancelRequested: 0,
+      bookingRejected: 0,
+      bookingCancelled: 0,
+      roomAvailable: 0,
+      roomBusy: 0,
+      roomMaintenance: 0,
+      userCount: 0,
+      approverCount: 0,
+      adminCount: 0,
+      pendingAdminApproval: 0,
+      pendingCancelDecision: 0,
+    };
+
   return (
     <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        ภาพรวมระบบ
-      </h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-semibold text-text-primary">ภาพรวมระบบ</h1>
+        <Badge tone="neutral">ผู้ดูแลระบบ</Badge>
+      </div>
 
       {loadError && (
         <p className="mt-4 text-sm text-danger-text">{loadError}</p>
       )}
 
-      {stats && (
+      {!loadError && (
         <>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Link
+            <HighlightCard
               href="/approver"
-              className="rounded-lg border border-warning-border bg-warning-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised"
-            >
-              <p className="text-sm text-text-secondary">รอ Admin อนุมัติ</p>
-              <p className="text-2xl font-semibold text-warning-text">
-                {stats.pendingAdminApproval}
-              </p>
-            </Link>
-            <Link
+              label="รอ Admin อนุมัติ"
+              hint="ไปหน้าคำขออนุมัติ"
+              value={s.pendingAdminApproval}
+              loading={loading}
+            />
+            <HighlightCard
               href="/approver/cancel-requests"
-              className="rounded-lg border border-warning-border bg-warning-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised"
-            >
-              <p className="text-sm text-text-secondary">
-                รอพิจารณาคำขอยกเลิก
-              </p>
-              <p className="text-2xl font-semibold text-warning-text">
-                {stats.pendingCancelDecision}
-              </p>
-            </Link>
+              label="รอพิจารณาคำขอยกเลิก"
+              hint="ไปหน้าคำขอยกเลิก"
+              value={s.pendingCancelDecision}
+              loading={loading}
+            />
           </div>
 
-          <div className="mt-6">
+          <section className="mt-6">
             <p className="font-medium text-text-primary">การจอง</p>
             <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">รออนุมัติ</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.bookingPending}
-                </p>
-              </Card>
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">อนุมัติแล้ว</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.bookingApproved}
-                </p>
-              </Card>
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">
-                  รอพิจารณายกเลิก
-                </p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.bookingCancelRequested}
-                </p>
-              </Card>
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">ถูกปฏิเสธ</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.bookingRejected}
-                </p>
-              </Card>
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">ยกเลิกแล้ว</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.bookingCancelled}
-                </p>
-              </Card>
+              <StatCard
+                label="รออนุมัติ"
+                value={s.bookingPending}
+                loading={loading}
+              />
+              <StatCard
+                label="อนุมัติแล้ว"
+                value={s.bookingApproved}
+                loading={loading}
+              />
+              <StatCard
+                label="รอพิจารณายกเลิก"
+                value={s.bookingCancelRequested}
+                loading={loading}
+              />
+              <StatCard
+                label="ถูกปฏิเสธ"
+                value={s.bookingRejected}
+                loading={loading}
+              />
+              <StatCard
+                label="ยกเลิกแล้ว"
+                value={s.bookingCancelled}
+                loading={loading}
+              />
             </div>
-          </div>
+          </section>
 
-          <div className="mt-6">
+          <section className="mt-6">
             <p className="font-medium text-text-primary">ห้องประชุม</p>
             <div className="mt-2 grid grid-cols-3 gap-3">
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">ว่าง</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.roomAvailable}
-                </p>
-              </Card>
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">ไม่ว่าง</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.roomBusy}
-                </p>
-              </Card>
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">ปิดปรับปรุง</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.roomMaintenance}
-                </p>
-              </Card>
+              <StatCard label="ว่าง" value={s.roomAvailable} loading={loading} />
+              <StatCard label="ไม่ว่าง" value={s.roomBusy} loading={loading} />
+              <StatCard
+                label="ปิดปรับปรุง"
+                value={s.roomMaintenance}
+                loading={loading}
+              />
             </div>
-          </div>
+          </section>
 
-          <div className="mt-6">
+          <section className="mt-6">
             <p className="font-medium text-text-primary">ผู้ใช้งาน</p>
             <div className="mt-2 grid grid-cols-3 gap-3">
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">ผู้ใช้ทั่วไป</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.userCount}
-                </p>
-              </Card>
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">ผู้อนุมัติ</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.approverCount}
-                </p>
-              </Card>
-              <Card padding="p-4">
-                <p className="text-sm text-text-secondary">ผู้ดูแลระบบ</p>
-                <p className="text-xl font-semibold text-text-primary">
-                  {stats.adminCount}
-                </p>
-              </Card>
+              <StatCard
+                label="ผู้ใช้ทั่วไป"
+                value={s.userCount}
+                loading={loading}
+              />
+              <StatCard
+                label="ผู้อนุมัติ"
+                value={s.approverCount}
+                loading={loading}
+              />
+              <StatCard
+                label="ผู้ดูแลระบบ"
+                value={s.adminCount}
+                loading={loading}
+              />
             </div>
-          </div>
+          </section>
         </>
       )}
     </div>
