@@ -866,6 +866,27 @@ describe("notifyAndLog — Discord/WeLPRU channel gating", () => {
     const inserts = calls.filter((c: DbCallContext) => c.table === "notifications" && c.op === "insert");
     expect(inserts).toHaveLength(1); // in-app ยังทำงานปกติ
   });
+
+  it("system_config query THROW (reject ไม่ใช่ resolve-with-error) → ยังไม่ throw, in-app ทำงาน", async () => {
+    // ★ ล็อกกฎ "ไม่ throw เด็ดขาด" สำหรับ config load ที่เพิ่มมาในเฟส 2 —
+    //   ต่างจาก test ด้านบนที่ system_config resolve พร้อม error field, อันนี้
+    //   responder throw จริง (mockClient แปลงเป็น Promise.reject) ถ้า
+    //   loadNotificationConfig ไม่ห่อ try/catch, notifyAndLog จะ reject ตรงนี้
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "system_config") throw new Error("boom");
+      if (ctx.table === "notifications" && ctx.op === "insert") return {};
+      throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
+    });
+    await expect(
+      notifyAndLog(client as never, {
+        eventKey: "booking_approved",
+        recipients: [{ userId: "u1" }],
+        variables: vars,
+      })
+    ).resolves.toBeUndefined();
+    const inserts = calls.filter((c: DbCallContext) => c.table === "notifications" && c.op === "insert");
+    expect(inserts).toHaveLength(1);
+  });
 });
 ```
 
@@ -943,24 +964,36 @@ interface NotificationConfig {
   settings: Record<string, EventOverride>;
 }
 
+const CONFIG_DISABLED: NotificationConfig = {
+  welpruEnabled: false,
+  discordEnabled: false,
+  settings: {},
+};
+
+// ★ ต้องไม่ throw เด็ดขาด — ห่อ try/catch เพราะจุดเรียก (notifyAndLog) ไม่มี
+//   try/catch รอบ config load และ query อาจ reject (ไม่ใช่แค่ resolve-with-error)
+//   ถ้า config อ่านไม่ได้ไม่ว่าเหตุใด → ปิดทุกช่องทางใหม่ ปล่อย in-app ทำงานต่อ
 async function loadNotificationConfig(client: SupabaseClient): Promise<NotificationConfig> {
-  const { data, error } = await client
-    .from("system_config")
-    .select("welpru_enabled, discord_enabled, notification_settings")
-    .single();
-  if (error || !data) {
-    return { welpruEnabled: false, discordEnabled: false, settings: {} };
+  try {
+    const { data, error } = await client
+      .from("system_config")
+      .select("welpru_enabled, discord_enabled, notification_settings")
+      .single();
+    if (error || !data) return CONFIG_DISABLED;
+    const row = data as {
+      welpru_enabled: boolean | null;
+      discord_enabled: boolean | null;
+      notification_settings: Record<string, EventOverride> | null;
+    };
+    return {
+      welpruEnabled: row.welpru_enabled ?? false,
+      discordEnabled: row.discord_enabled ?? false,
+      settings: row.notification_settings ?? {},
+    };
+  } catch (err) {
+    console.error("[notifyAndLog] loadNotificationConfig ล้มเหลว:", err);
+    return CONFIG_DISABLED;
   }
-  const row = data as {
-    welpru_enabled: boolean | null;
-    discord_enabled: boolean | null;
-    notification_settings: Record<string, EventOverride> | null;
-  };
-  return {
-    welpruEnabled: row.welpru_enabled ?? false,
-    discordEnabled: row.discord_enabled ?? false,
-    settings: row.notification_settings ?? {},
-  };
 }
 
 function getEventOverride(cfg: NotificationConfig, eventKey: EventKey): EventOverride {
@@ -968,16 +1001,22 @@ function getEventOverride(cfg: NotificationConfig, eventKey: EventKey): EventOve
 }
 
 // ── WeLPRU eligibility (ต้องมี staff_id + verified แล้ว) ──
+// ★ ต้องไม่ throw เด็ดขาด — เรียกใน loop นอก try/catch ของ welpru branch
 async function loadWelpruStaffId(client: SupabaseClient, userId: string): Promise<string | null> {
-  const { data, error } = await client
-    .from("users")
-    .select("staff_id, welpru_verified_at")
-    .eq("id", userId)
-    .single();
-  if (error || !data) return null;
-  const row = data as { staff_id: string | null; welpru_verified_at: string | null };
-  if (!row.staff_id || !row.welpru_verified_at) return null;
-  return row.staff_id;
+  try {
+    const { data, error } = await client
+      .from("users")
+      .select("staff_id, welpru_verified_at")
+      .eq("id", userId)
+      .single();
+    if (error || !data) return null;
+    const row = data as { staff_id: string | null; welpru_verified_at: string | null };
+    if (!row.staff_id || !row.welpru_verified_at) return null;
+    return row.staff_id;
+  } catch (err) {
+    console.error("[notifyAndLog] loadWelpruStaffId ล้มเหลว:", err);
+    return null;
+  }
 }
 ```
 
@@ -1071,7 +1110,7 @@ import { logIntegration } from "./integrationLog.ts";
 - [ ] **Step 5: รัน test ให้ผ่าน**
 
 Run: `npm run test -- notify`
-Expected: PASS ทั้งหมด — ทั้ง test เดิม 11 case ของ `notifyAndLog`/`buildNotification`/`applyTemplate`/formatters (**ต้องผ่านโดยไม่แก้ assertion เดิมแม้แต่บรรทัดเดียว**) และ test ใหม่ 9 case (3 ของ buildNotification override + 6 ของ Discord/WeLPRU gating)
+Expected: PASS ทั้งหมด — ทั้ง test เดิม 11 case ของ `notifyAndLog`/`buildNotification`/`applyTemplate`/formatters (**ต้องผ่านโดยไม่แก้ assertion เดิมแม้แต่บรรทัดเดียว** — โดยเฉพาะ `"ไม่ throw แม้ทุก insert ล้มเหลว"` ที่เป็นตัวจับ bug ถ้า `loadNotificationConfig` ไม่ห่อ try/catch) และ test ใหม่ 10 case (3 ของ buildNotification override + 7 ของ Discord/WeLPRU gating รวม throw-path)
 
 - [ ] **Step 6: รัน full suite**
 
@@ -1610,15 +1649,29 @@ Deno.serve(
 );
 ```
 
-- [ ] **Step 7: รัน full suite**
+- [ ] **Step 7: เพิ่ม config.toml entries (verify_jwt=true) ให้ 2 function ใหม่**
+
+แก้ `supabase/config.toml` — เพิ่ม 2 บล็อกนี้ (วางต่อจากบล็อก function อื่นๆ ที่มีอยู่ ให้สอดคล้องกับ pattern เดิมที่ทุก function ระบุ `verify_jwt` ชัดเจน):
+
+```toml
+[functions.request-welpru-verify]
+verify_jwt = true
+
+[functions.confirm-welpru-verify]
+verify_jwt = true
+```
+
+(Supabase default `verify_jwt=true` อยู่แล้ว แต่โปรเจกต์นี้ระบุทุก function ชัดเจน — ทำตามให้สม่ำเสมอ กันความสับสนตอน audit)
+
+- [ ] **Step 8: รัน full suite**
 
 Run: `npm run test`
 Expected: PASS ทั้งหมด
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add supabase/functions/_shared/welpruVerify.ts supabase/functions/_shared/welpruVerify.test.ts supabase/functions/request-welpru-verify supabase/functions/confirm-welpru-verify
+git add supabase/functions/_shared/welpruVerify.ts supabase/functions/_shared/welpruVerify.test.ts supabase/functions/request-welpru-verify supabase/functions/confirm-welpru-verify supabase/config.toml
 git commit -m "feat(notify): welpruVerify shared logic + request/confirm edge functions"
 ```
 
@@ -1885,7 +1938,7 @@ Expected: ไม่มี error ใหม่ที่เกี่ยวกับ
 - [ ] **Step 4: รัน full suite ครั้งสุดท้ายก่อน deploy**
 
 Run: `npm run test`
-Expected: PASS ทั้งหมด (ควรอยู่ที่ 66 + 4(retry) + 4(discordClient) + 7(welpruClient) + 9(notify ใหม่) + 2(bookingNotify ใหม่) + 6(welpruVerify) = 98 โดยประมาณ — ตัวเลขจริงดูจาก output)
+Expected: PASS ทั้งหมด (ควรอยู่ที่ 66 + 4(retry) + 4(discordClient) + 7(welpruClient) + 10(notify ใหม่) + 2(bookingNotify ใหม่) + 6(welpruVerify) = 99 โดยประมาณ — ตัวเลขจริงดูจาก output)
 
 - [ ] **Step 5: ตรวจ/ตั้ง secrets (controller)**
 
