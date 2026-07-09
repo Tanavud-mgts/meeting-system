@@ -38,11 +38,13 @@ export function useNotifications() {
 
     // Realtime เป็นหลัก
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
     (async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      if (cancelled) return;
       channel = supabase
         .channel("user-notifications")
         .on(
@@ -62,38 +64,60 @@ export function useNotifications() {
     const timer = setInterval(load, POLL_MS);
 
     return () => {
+      cancelled = true;
       if (channel) supabase.removeChannel(channel);
       clearInterval(timer);
     };
   }, [load]);
 
-  const markAsRead = useCallback(async (id: string) => {
-    setItems((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-    );
-    const supabase = createClient();
-    await supabase
-      .from("notifications")
-      .update({ is_read: true, read_at: new Date().toISOString() })
-      .eq("id", id);
-  }, []);
+  const markAsRead = useCallback(
+    async (id: string) => {
+      setItems((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) {
+        console.error("[useNotifications] markAsRead failed:", error);
+        load();
+      }
+    },
+    [load]
+  );
 
   const markAllAsRead = useCallback(async () => {
     setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
     const supabase = createClient();
     if (!userIdRef.current) return;
-    await supabase
+    const { error } = await supabase
       .from("notifications")
       .update({ is_read: true, read_at: new Date().toISOString() })
       .eq("user_id", userIdRef.current)
       .eq("is_read", false);
-  }, []);
+    if (error) {
+      console.error("[useNotifications] markAllAsRead failed:", error);
+      load();
+    }
+  }, [load]);
 
-  const remove = useCallback(async (id: string) => {
-    setItems((prev) => prev.filter((n) => n.id !== id));
-    const supabase = createClient();
-    await supabase.from("notifications").delete().eq("id", id);
-  }, []);
+  const remove = useCallback(
+    async (id: string) => {
+      setItems((prev) => prev.filter((n) => n.id !== id));
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", id);
+      if (error) {
+        console.error("[useNotifications] remove failed:", error);
+        load();
+      }
+    },
+    [load]
+  );
 
   const unreadCount = items.filter((n) => !n.is_read).length;
 
