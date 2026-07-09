@@ -112,12 +112,79 @@ describe("notifyBookingCancelledByAdmin", () => {
 });
 
 describe("bookingNotify ไม่ throw เมื่อ db พัง", () => {
-  it("booking_detail ไม่พบ → เงียบ ไม่ throw ไม่ insert", async () => {
+  it("booking_detail ไม่พบ → เงียบ ไม่ throw ไม่ insert (notifyBookingSubmitted)", async () => {
     const { client, calls } = makeClient((ctx) => {
       if (ctx.table === "booking_detail") return { data: null, error: { message: "not found" } };
       throw new Error("should not reach");
     });
     await expect(notifyBookingSubmitted(client as never, "b1")).resolves.toBeUndefined();
+    expect(inserts(calls)).toHaveLength(0);
+  });
+
+  it("booking_detail ไม่พบ → เงียบ ไม่ throw ไม่ insert (notifyApprovalOutcome)", async () => {
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "booking_detail") return { data: null, error: { message: "not found" } };
+      throw new Error("should not reach");
+    });
+    await expect(
+      notifyApprovalOutcome(
+        client as never,
+        "b1",
+        { bookingId: "b1", step: 1, action: "approved", currentStep: 1, finalStatus: "pending" },
+        "ทดสอบ"
+      )
+    ).resolves.toBeUndefined();
+    expect(inserts(calls)).toHaveLength(0);
+  });
+
+  it("booking_detail ไม่พบ → เงียบ ไม่ throw ไม่ insert (notifyCancellationRequested)", async () => {
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "booking_detail") return { data: null, error: { message: "not found" } };
+      throw new Error("should not reach");
+    });
+    await expect(notifyCancellationRequested(client as never, "b1", "ยกเลิก")).resolves.toBeUndefined();
+    expect(inserts(calls)).toHaveLength(0);
+  });
+
+  it("booking_detail ไม่พบ → เงียบ ไม่ throw ไม่ insert (notifyCancellationDecision)", async () => {
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "booking_detail") return { data: null, error: { message: "not found" } };
+      throw new Error("should not reach");
+    });
+    await expect(notifyCancellationDecision(client as never, "b1", "approve")).resolves.toBeUndefined();
+    expect(inserts(calls)).toHaveLength(0);
+  });
+
+  it("booking_detail ไม่พบ → เงียบ ไม่ throw ไม่ insert (notifyBookingCancelledByAdmin)", async () => {
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "booking_detail") return { data: null, error: { message: "not found" } };
+      throw new Error("should not reach");
+    });
+    await expect(
+      notifyBookingCancelledByAdmin(client as never, "b1", "ปิดปรับปรุง")
+    ).resolves.toBeUndefined();
+    expect(inserts(calls)).toHaveLength(0);
+  });
+
+  it("system_config admin_id null → เงียบ ไม่ throw ไม่ insert (notifyBookingSubmitted)", async () => {
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "booking_detail") return { data: detail };
+      if (ctx.table === "system_config")
+        return { data: { admin_id: null, approver1_id: "apv1", approver2_id: "apv2" } };
+      throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
+    });
+    await expect(notifyBookingSubmitted(client as never, "b1")).resolves.toBeUndefined();
+    expect(inserts(calls)).toHaveLength(0);
+  });
+
+  it("system_config admin_id null → เงียบ ไม่ throw ไม่ insert (notifyCancellationRequested)", async () => {
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "booking_detail") return { data: detail };
+      if (ctx.table === "system_config")
+        return { data: { admin_id: null, approver1_id: "apv1", approver2_id: "apv2" } };
+      throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
+    });
+    await expect(notifyCancellationRequested(client as never, "b1", "ยกเลิก")).resolves.toBeUndefined();
     expect(inserts(calls)).toHaveLength(0);
   });
 });
