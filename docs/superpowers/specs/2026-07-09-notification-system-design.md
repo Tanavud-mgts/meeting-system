@@ -65,7 +65,7 @@ notifyAndLog()  ←  supabase/functions/_shared/notify.ts
 
 ### Secrets (Critical Rule 7 — ต่างจากต้นแบบที่เก็บ API key ใน DB)
 
-`WELPRU_API_KEY`, `DISCORD_WEBHOOK_URL`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` อยู่ใน Supabase Edge Function Secrets ทั้งหมด — เปลี่ยนค่าผ่าน `supabase secrets set` เท่านั้น (ยอมแลกความสะดวกกับความปลอดภัย เพราะเปลี่ยนไม่บ่อย) ส่วน toggle และ template อยู่ใน `system_config` เพราะไม่ใช่ secret
+`WELPRU_API_KEY`, `DISCORD_WEBHOOK_URL`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` และ `SITE_URL` (โดเมน Vercel สำหรับสร้าง deep link ยืนยัน) อยู่ใน Supabase Edge Function Secrets ทั้งหมด — เปลี่ยนค่าผ่าน `supabase secrets set` เท่านั้น (ยอมแลกความสะดวกกับความปลอดภัย เพราะเปลี่ยนไม่บ่อย) ส่วน toggle และ template อยู่ใน `system_config` เพราะไม่ใช่ secret
 
 ## Database Schema — migration `021_notifications.sql`
 
@@ -149,7 +149,7 @@ notification_settings jsonb NOT NULL DEFAULT '{}'
 | `cancellation_requested` | Admin | 🔔 มีคำขอยกเลิกการจอง | {booker} ขอยกเลิกการจอง{room} วันที่ {date} เหตุผล: {reason} | `/approver/cancel-requests` |
 | `cancellation_approved` | ผู้จอง | ✅ คำขอยกเลิกได้รับอนุมัติ | การจอง{room} วันที่ {date} ถูกยกเลิกเรียบร้อยแล้ว | `/profile/bookings` |
 | `cancellation_denied` | ผู้จอง | ❌ คำขอยกเลิกไม่ได้รับอนุมัติ | การจอง{room} วันที่ {date} ยังมีผลตามเดิม เหตุผล: {reason} | `/profile/bookings` |
-| `booking_cancelled` | ผู้จอง | ⚠️ การจองของท่านถูกยกเลิก | การจอง{room} วันที่ {date} เวลา {time} ถูกยกเลิกโดยผู้ดูแลระบบ เหตุผล: {reason} | `/profile/bookings` |
+| `booking_cancelled` | ผู้จอง | ⚠️ การจองของท่านถูกยกเลิก | การจอง{room} วันที่ {date} เวลา {time} ถูกยกเลิก เหตุผล: {reason} | `/profile/bookings` |
 | `line_quota_warning` | Admin | ⚠️ โควตา LINE ใกล้เต็ม | เดือนนี้ส่งไปแล้ว {sent}/500 ข้อความ เมื่อครบโควตาระบบจะหยุดส่งทาง LINE อัตโนมัติ | `/dashboard/integrations` |
 
 **Push พิเศษนอกตาราง toggle:** `welpru_link_verify` — title "ยืนยันการรับแจ้งเตือน" body "แตะลิงก์นี้เพื่อยืนยันการรับแจ้งเตือนจากระบบจองห้องประชุม" + deep link ไปหน้า confirm พร้อม token
@@ -168,7 +168,7 @@ notification_settings jsonb NOT NULL DEFAULT '{}'
 ⚠️ LINE quota: {sent}/500
 ```
 
-**LINE:** Flex Message ของ Approver ไม่ใช้ template ชุดนี้ (structured card มีปุ่มอนุมัติ/ปฏิเสธ + รายละเอียดการจอง) แต่ `altText` ใช้ title เดียวกับตาราง
+**LINE:** Flex Message ของ Approver ไม่ใช้ template ชุดนี้ (structured card มีปุ่มอนุมัติ/ปฏิเสธ + รายละเอียดการจอง) แต่ `altText` ใช้ title เดียวกับตาราง — **ปุ่ม postback มีเฉพาะเหตุการณ์อนุมัติการจอง** (`booking_submitted` / `booking_step_approved`) ส่วน `cancellation_requested` เป็นข้อความแจ้ง + ลิงก์ไปหน้าเว็บเท่านั้น ไม่มีปุ่มตัดสินใจในแชท (จำกัดสโคป postback ให้แคบ — การตัดสินคำขอยกเลิกทำผ่านเว็บ)
 
 ## Orchestration Layer — `supabase/functions/_shared/notify.ts`
 
