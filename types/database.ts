@@ -621,42 +621,54 @@ export type Database = {
           admin_id: string | null
           approver1_id: string | null
           approver2_id: string | null
+          discord_enabled: boolean
           holidays: Json
           id: string
           integration_log_retention_months: number
+          line_enabled: boolean
           line_token_retention_days: number
+          notification_settings: Json
           office_end_hour: number
           office_start_hour: number
           setup_completed: boolean
           updated_at: string | null
+          welpru_enabled: boolean
         }
         Insert: {
           activity_log_retention_months?: number
           admin_id?: string | null
           approver1_id?: string | null
           approver2_id?: string | null
+          discord_enabled?: boolean
           holidays?: Json
           id?: string
           integration_log_retention_months?: number
+          line_enabled?: boolean
           line_token_retention_days?: number
+          notification_settings?: Json
           office_end_hour?: number
           office_start_hour?: number
           setup_completed?: boolean
           updated_at?: string | null
+          welpru_enabled?: boolean
         }
         Update: {
           activity_log_retention_months?: number
           admin_id?: string | null
           approver1_id?: string | null
           approver2_id?: string | null
+          discord_enabled?: boolean
           holidays?: Json
           id?: string
           integration_log_retention_months?: number
+          line_enabled?: boolean
           line_token_retention_days?: number
+          notification_settings?: Json
           office_end_hour?: number
           office_start_hour?: number
           setup_completed?: boolean
           updated_at?: string | null
+          welpru_enabled?: boolean
         }
         Relationships: [
           {
@@ -714,6 +726,7 @@ export type Database = {
           phone: string | null
           role: string
           staff_id: string | null
+          welpru_verified_at: string | null
         }
         Insert: {
           created_at?: string | null
@@ -725,6 +738,7 @@ export type Database = {
           phone?: string | null
           role?: string
           staff_id?: string | null
+          welpru_verified_at?: string | null
         }
         Update: {
           created_at?: string | null
@@ -736,8 +750,54 @@ export type Database = {
           phone?: string | null
           role?: string
           staff_id?: string | null
+          welpru_verified_at?: string | null
         }
         Relationships: []
+      }
+      welpru_link_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          is_used: boolean
+          staff_id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          staff_id: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          staff_id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welpru_link_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "booking_detail"
+            referencedColumns: ["requester_id"]
+          },
+          {
+            foreignKeyName: "welpru_link_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
