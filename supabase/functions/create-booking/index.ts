@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { withErrorHandling } from "../_shared/handler.ts";
 import { ValidationError, UnauthorizedError, ConflictError } from "../_shared/errors.ts";
+import { notifyBookingSubmitted } from "../_shared/bookingNotify.ts";
 
 interface CreateBookingRequest {
   room_id: string;
@@ -73,6 +74,8 @@ Deno.serve(
       }
       throw insertError;
     }
+
+    await notifyBookingSubmitted(adminClient, booking.id);
 
     return new Response(JSON.stringify(booking), {
       status: 201,

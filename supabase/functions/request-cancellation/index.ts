@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { withErrorHandling } from "../_shared/handler.ts";
 import { UnauthorizedError } from "../_shared/errors.ts";
 import { requestCancellation } from "../_shared/processCancellation.ts";
+import { notifyCancellationRequested } from "../_shared/bookingNotify.ts";
 
 interface RequestCancellationBody {
   booking_id: string;
@@ -38,6 +39,10 @@ Deno.serve(
       requesterId: user.id,
       reason: body.reason,
     });
+
+    if (result.newStatus === "cancel_requested") {
+      await notifyCancellationRequested(adminClient, body.booking_id, body.reason);
+    }
 
     return new Response(JSON.stringify(result), {
       status: 200,
