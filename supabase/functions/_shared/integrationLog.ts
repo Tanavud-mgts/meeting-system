@@ -28,17 +28,27 @@ export async function logIntegration(
   client: InsertableClient,
   entry: IntegrationLogEntry
 ): Promise<void> {
-  const { error } = await client.from("integration_health").insert({
-    service: entry.service,
-    status: entry.status,
-    payload: entry.payload ?? null,
-    error_detail: entry.error_detail ?? null,
-  });
+  try {
+    const { error } = await client.from("integration_health").insert({
+      service: entry.service,
+      status: entry.status,
+      payload: entry.payload ?? null,
+      error_detail: entry.error_detail ?? null,
+    });
 
-  if (error) {
+    if (error) {
+      console.error(
+        "logIntegration: failed to write integration_health row:",
+        error.message
+      );
+    }
+  } catch (err) {
+    // Promise rejection (e.g., network error, connection down).
+    // Swallow the error to maintain the fire-and-forget guarantee
+    // for callers like notifyAndLog (which must never throw).
     console.error(
-      "logIntegration: failed to write integration_health row:",
-      error.message
+      "logIntegration: insert promise rejected:",
+      err instanceof Error ? err.message : String(err)
     );
   }
 }
