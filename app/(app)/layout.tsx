@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppNav from "./AppNav";
 import PageTabs from "@/components/ui/PageTabs";
+import NotificationBell from "@/components/ui/NotificationBell";
 import { buildSidebar, type Role } from "@/lib/nav";
 
 export default async function AppLayout({
@@ -30,6 +31,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
+      <NotificationBell />
       <AppNav items={sidebarItems} />
       <main className="flex-1 bg-surface-page pt-14 pb-20 md:pt-0 md:pb-0">
         <PageTabs role={role} />
