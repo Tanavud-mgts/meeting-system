@@ -3,7 +3,9 @@ export type IntegrationService =
   | "line"
   | "google_calendar"
   | "vercel"
-  | "internal";
+  | "internal"
+  | "welpru"
+  | "discord";
 
 export type IntegrationStatus = "success" | "failed";
 

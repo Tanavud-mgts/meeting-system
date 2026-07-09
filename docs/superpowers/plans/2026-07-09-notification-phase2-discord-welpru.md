@@ -1110,7 +1110,16 @@ import { logIntegration } from "./integrationLog.ts";
 - [ ] **Step 5: รัน test ให้ผ่าน**
 
 Run: `npm run test -- notify`
-Expected: PASS ทั้งหมด — ทั้ง test เดิม 11 case ของ `notifyAndLog`/`buildNotification`/`applyTemplate`/formatters (**ต้องผ่านโดยไม่แก้ assertion เดิมแม้แต่บรรทัดเดียว** — โดยเฉพาะ `"ไม่ throw แม้ทุก insert ล้มเหลว"` ที่เป็นตัวจับ bug ถ้า `loadNotificationConfig` ไม่ห่อ try/catch) และ test ใหม่ 10 case (3 ของ buildNotification override + 7 ของ Discord/WeLPRU gating รวม throw-path)
+Expected: PASS ทั้งหมด — ทั้ง test เดิมของ `notifyAndLog`/`buildNotification`/`applyTemplate`/formatters (โดยเฉพาะ `"ไม่ throw แม้ทุก insert ล้มเหลว"` ที่เป็นตัวจับ bug ถ้า `loadNotificationConfig` ไม่ห่อ try/catch) และ test ใหม่ 10 case (3 ของ buildNotification override + 7 ของ Discord/WeLPRU gating รวม throw-path)
+
+> **แก้ 1 assertion เดิมที่ต้องเปลี่ยน (จำเป็น ไม่ใช่ regression):** test `"insert สำเร็จ (resolve) แต่ response มี error field ไม่ throw"` เดิมยืนยันด้วย `expect(calls).toHaveLength(1)` (นับ call ทั้งหมด) — แต่เฟส 2 `notifyAndLog` อ่าน `system_config` ก่อน insert ทำให้ call รวมเป็น 2 โดยชอบธรรม (ไม่ใช่ bug) เจตนาเดิมของ test (คอมเมนต์ในไฟล์: "confirm the insert was actually attempted") รักษาไว้ได้ด้วยการ filter เฉพาะ notifications insert แทนการนับรวม:
+> ```typescript
+> const inserts = calls.filter(
+>   (c: DbCallContext) => c.table === "notifications" && c.op === "insert"
+> );
+> expect(inserts).toHaveLength(1);
+> ```
+> assertion อื่นๆ ทั้งหมดคงเดิม — โดยเฉพาะ `"recipients ว่าง = ไม่ insert อะไร"` (`expect(calls).toHaveLength(0)`) ยังผ่านเพราะ early-return บน recipients ว่าง เกิดก่อน `loadNotificationConfig`
 
 - [ ] **Step 6: รัน full suite**
 
