@@ -96,4 +96,18 @@ describe("notifyAndLog", () => {
     });
     expect(calls).toHaveLength(0);
   });
+
+  it("insert สำเร็จ (resolve) แต่ response มี error field ไม่ throw", async () => {
+    const { client, calls } = makeClient(() => ({ error: { message: "insert failed" } }));
+    await expect(
+      notifyAndLog(client as never, {
+        eventKey: "booking_approved",
+        recipients: [{ userId: "u1" }],
+        variables: vars,
+      })
+    ).resolves.toBeUndefined();
+    // confirms the call was actually attempted — proves this test exercises
+    // the res.value.error branch (not the empty-recipients no-op path)
+    expect(calls).toHaveLength(1);
+  });
 });
