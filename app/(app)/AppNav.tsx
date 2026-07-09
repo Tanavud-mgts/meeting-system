@@ -13,7 +13,7 @@ function isActive(item: SidebarItem, pathname: string): boolean {
 function linkClass(active: boolean): string {
   return `rounded-sm px-3 py-2 text-sm ${
     active
-      ? "bg-neutral-100 font-medium text-text-primary"
+      ? "bg-nav-active-surface font-medium text-text-primary"
       : "text-text-secondary hover:bg-neutral-100"
   }`;
 }
@@ -29,6 +29,14 @@ export default function AppNav({ items }: { items: SidebarItem[] }) {
   return (
     <>
       <aside className="hidden w-[200px] shrink-0 border-r border-neutral-200 bg-surface-card p-4 md:block">
+        <div className="mb-3 border-b border-neutral-100 px-2 pb-3.5">
+          <p className="text-lg font-bold leading-snug text-brand-primary">
+            ระบบจองห้องประชุม
+          </p>
+          <p className="mt-0.5 text-sm text-text-secondary">
+            มหาวิทยาลัยราชภัฏลำปาง
+          </p>
+        </div>
         <nav className="flex flex-col gap-1">
           {items.map((item) => (
             <Link
@@ -67,7 +75,14 @@ export default function AppNav({ items }: { items: SidebarItem[] }) {
           />
           <nav className="absolute inset-y-0 left-0 w-64 max-w-[80vw] overflow-y-auto bg-surface-card p-4">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm font-semibold text-text-primary">เมนู</p>
+              <div>
+                <p className="text-base font-bold leading-snug text-brand-primary">
+                  ระบบจองห้องประชุม
+                </p>
+                <p className="text-xs text-text-secondary">
+                  มหาวิทยาลัยราชภัฏลำปาง
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}

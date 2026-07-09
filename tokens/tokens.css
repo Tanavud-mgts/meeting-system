@@ -26,6 +26,8 @@
   --color-surface-card:   var(--color-neutral-0);
   --color-surface-sunken: #f7fafa;
   --color-surface-field:  #fbfdfd;
+  /* เมนู sidebar ที่กำลัง active — โทน brand จางให้ต่างจากพื้นการ์ด/เทา hover */
+  --color-nav-active-surface: #e4f3ea;
 
   /* ---- Text ---- */
   --color-text-primary:    var(--color-neutral-900);

@@ -36,6 +36,7 @@
   --color-surface-card:   var(--color-surface-card);
   --color-surface-sunken: var(--color-surface-sunken);
   --color-surface-field:  var(--color-surface-field);
+  --color-nav-active-surface: var(--color-nav-active-surface);
 
   /* Text */
   --color-text-primary:    var(--color-text-primary);
