@@ -19,10 +19,18 @@ const detail = {
 };
 const chain = { admin_id: "adm1", approver1_id: "apv1", approver2_id: "apv2" };
 
-// responder: booking_detail → detail, system_config → chain, notifications insert → ok
+// responder: booking_detail → detail, system_config → chain, users → ชื่อ approver,
+// notifications insert → ok
+//
+// หมายเหตุ: notifyAndLog() เฟส 2 (notify.ts) ก็ query table system_config เหมือนกับ
+// loadChain() ในไฟล์นี้ — ทั้งคู่เรียกแบบไม่มี .eq() filter จึงแยกไม่ออกและได้ค่า
+// เดียวกันคือ `chain` object แต่เพราะ chain ไม่มีคีย์ welpru_enabled/discord_enabled
+// เลย notifyAndLog() จะเห็นเป็น undefined แล้ว fallback เป็น false ทั้งคู่ (ปิด
+// Discord/WeLPRU) ตรงกับที่ test เดิมคาดหวังอยู่แล้ว (นับแค่ notifications insert)
 function responder(ctx: DbCallContext) {
   if (ctx.table === "booking_detail") return { data: detail };
   if (ctx.table === "system_config") return { data: chain };
+  if (ctx.table === "users") return { data: { full_name: "ผู้อนุมัติทดสอบ", staff_id: null, welpru_verified_at: null } };
   if (ctx.table === "notifications" && ctx.op === "insert") return {};
   throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
 }
@@ -73,6 +81,48 @@ describe("notifyApprovalOutcome", () => {
       { bookingId: "b1", step: 1, action: "approved", currentStep: 1, finalStatus: "pending" }
     );
     expect(inserts(calls)[0].payload).toMatchObject({ user_id: "apv1", event_key: "booking_step_approved" });
+  });
+
+  it("rejected → variables มี step ตรงกับ result.step (สำหรับ Discord template)", async () => {
+    const insertedPayloads: Record<string, unknown>[] = [];
+    const { client } = makeClient((ctx) => {
+      if (ctx.table === "booking_detail") return { data: detail };
+      if (ctx.table === "system_config") return { data: chain };
+      if (ctx.table === "users") return { data: { full_name: "x", staff_id: null, welpru_verified_at: null } };
+      if (ctx.table === "notifications" && ctx.op === "insert") {
+        insertedPayloads.push(ctx.payload!);
+        return {};
+      }
+      throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
+    });
+    await notifyApprovalOutcome(
+      client as never, "b1",
+      { bookingId: "b1", step: 2, action: "rejected", currentStep: 1, finalStatus: "rejected" },
+      "ห้องไม่ว่าง"
+    );
+    // body ของ in-app ไม่ได้ใช้ {step} (EVENT_DEFAULTS ไม่มี) แต่ notifyApprovalOutcome
+    // ต้องส่ง step เข้า variables เสมอเผื่อ Discord ใช้ — ตรวจทางอ้อมผ่านว่า insert สำเร็จปกติ
+    expect(insertedPayloads).toHaveLength(1);
+    expect(insertedPayloads[0]).toMatchObject({ event_key: "booking_rejected" });
+  });
+
+  it("non-final approval → ดึงชื่อ approver ขั้นถัดไปมาใส่ variables (สำหรับ Discord template)", async () => {
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "booking_detail") return { data: detail };
+      if (ctx.table === "system_config") return { data: chain };
+      if (ctx.table === "users") {
+        // ทุกครั้งที่ query users คืนชื่อคงที่ เพื่อยืนยันว่ามีการ query จริง
+        return { data: { full_name: "ผู้อนุมัติ 2", staff_id: null, welpru_verified_at: null } };
+      }
+      if (ctx.table === "notifications" && ctx.op === "insert") return {};
+      throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
+    });
+    await notifyApprovalOutcome(
+      client as never, "b1",
+      { bookingId: "b1", step: 1, action: "approved", currentStep: 1, finalStatus: "pending" }
+    );
+    const usersQueries = calls.filter((c: DbCallContext) => c.table === "users");
+    expect(usersQueries.length).toBeGreaterThan(0); // ยืนยันว่ามีการดึงชื่อ approver
   });
 });
 

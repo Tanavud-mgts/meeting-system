@@ -46,6 +46,16 @@ async function loadChain(client: SupabaseClient): Promise<ChainRow | null> {
   return data as ChainRow;
 }
 
+async function loadUserName(client: SupabaseClient, userId: string): Promise<string> {
+  const { data, error } = await client
+    .from("users")
+    .select("full_name")
+    .eq("id", userId)
+    .single();
+  if (error || !data) return "ผู้อนุมัติ";
+  return (data as { full_name: string }).full_name;
+}
+
 // ตัวแปรพื้นฐานจาก booking_detail (booker/room/date/time)
 function baseVars(d: BookingDetailRow): Record<string, string> {
   return {
@@ -89,7 +99,7 @@ export async function notifyApprovalOutcome(
       await notifyAndLog(client, {
         eventKey: "booking_rejected",
         recipients: [{ userId: d.requester_id }],
-        variables: { ...base, reason: (note ?? "").trim() || "ไม่ระบุ" },
+        variables: { ...base, reason: (note ?? "").trim() || "ไม่ระบุ", step: String(result.step) },
       });
       return;
     }
@@ -108,10 +118,11 @@ export async function notifyApprovalOutcome(
     const nextField = STEP_FIELD[result.currentStep + 1];
     const nextApprover = nextField ? chain?.[nextField] : null;
     if (nextApprover) {
+      const approverName = await loadUserName(client, nextApprover);
       await notifyAndLog(client, {
         eventKey: "booking_step_approved",
         recipients: [{ userId: nextApprover }],
-        variables: base,
+        variables: { ...base, step: String(result.step), approver: approverName },
       });
     }
   } catch (err) {
