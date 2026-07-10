@@ -24,6 +24,24 @@ export async function requestWelpruVerify(
     throw new ValidationError("กรุณากรอกรหัสบุคลากรก่อนยืนยัน");
   }
 
+  // Guard: staffId ที่ส่งมาต้องตรงกับที่บันทึกไว้ในโปรไฟล์ของผู้ใช้เอง
+  // กันการส่ง push ทดสอบไปหา staff_id ของคนอื่น (พิมพ์ผิด หรือเรียก API ตรง
+  // ด้วยรหัสที่ไม่ใช่ของตน) — ต้องเช็คก่อน insert token และก่อนส่ง push ใดๆ
+  const { data: userRow, error: userError } = await client
+    .from("users")
+    .select("staff_id")
+    .eq("id", params.userId)
+    .single();
+  if (userError || !userRow) {
+    throw new ForbiddenError("ไม่พบข้อมูลผู้ใช้งาน");
+  }
+  const storedStaffId = (userRow as { staff_id: string | null }).staff_id;
+  if (!storedStaffId || storedStaffId !== staffId) {
+    throw new ValidationError(
+      "รหัสบุคลากรไม่ตรงกับข้อมูลในโปรไฟล์ กรุณาบันทึกรหัสบุคลากรก่อนยืนยัน"
+    );
+  }
+
   const token = generateToken();
 
   const { error: insertError } = await client.from("welpru_link_tokens").insert({

@@ -18,6 +18,8 @@ describe("requestWelpruVerify", () => {
   it("insert token แล้วเรียก sendPush พร้อม deep link ที่มี token", async () => {
     let insertedPayload: Record<string, unknown> | undefined;
     const { client } = makeClient((ctx) => {
+      // staffId ที่ส่งมาตรงกับที่เก็บในโปรไฟล์ → ผ่าน guard
+      if (ctx.table === "users" && ctx.op === "select") return { data: { staff_id: "S001" } };
       if (ctx.table === "welpru_link_tokens" && ctx.op === "insert") {
         insertedPayload = ctx.payload;
         return {};
@@ -39,6 +41,57 @@ describe("requestWelpruVerify", () => {
     expect(pushArg.staffIds).toEqual(["S001"]);
     expect(pushArg.link).toContain("https://example.test/profile/welpru-verify?token=");
     expect(pushArg.link).toContain(result.token);
+  });
+
+  it("throw ValidationError ถ้า staffId ที่ส่งมาไม่ตรงกับที่เก็บในโปรไฟล์ (กัน push ไปหาคนอื่น)", async () => {
+    // ผู้ใช้เก็บ S001 ไว้ในโปรไฟล์ แต่ส่ง S999 มา (พิมพ์ผิด/เรียก API ตรง)
+    // ต้องปฏิเสธก่อน insert token และก่อนส่ง push ใดๆ
+    const { client } = makeClient((ctx) => {
+      if (ctx.table === "users" && ctx.op === "select") return { data: { staff_id: "S001" } };
+      throw new Error(`should not reach: ${ctx.table}.${ctx.op}`);
+    });
+    const sendPush = vi.fn();
+    await expect(
+      requestWelpruVerify(
+        client as never,
+        { userId: "u1", staffId: "S999", siteUrl: "https://example.test" },
+        sendPush
+      )
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect(sendPush).not.toHaveBeenCalled();
+  });
+
+  it("throw ValidationError ถ้าโปรไฟล์ยังไม่มี staff_id (null) แม้ส่ง staffId มา", async () => {
+    const { client } = makeClient((ctx) => {
+      if (ctx.table === "users" && ctx.op === "select") return { data: { staff_id: null } };
+      throw new Error(`should not reach: ${ctx.table}.${ctx.op}`);
+    });
+    const sendPush = vi.fn();
+    await expect(
+      requestWelpruVerify(
+        client as never,
+        { userId: "u1", staffId: "S001", siteUrl: "https://example.test" },
+        sendPush
+      )
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect(sendPush).not.toHaveBeenCalled();
+  });
+
+  it("throw ForbiddenError ถ้าหา user ไม่เจอ", async () => {
+    const { client } = makeClient((ctx) => {
+      if (ctx.table === "users" && ctx.op === "select")
+        return { data: null, error: { message: "not found" } };
+      throw new Error(`should not reach: ${ctx.table}.${ctx.op}`);
+    });
+    const sendPush = vi.fn();
+    await expect(
+      requestWelpruVerify(
+        client as never,
+        { userId: "u1", staffId: "S001", siteUrl: "https://example.test" },
+        sendPush
+      )
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(sendPush).not.toHaveBeenCalled();
   });
 });
 
