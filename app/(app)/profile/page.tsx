@@ -15,6 +15,7 @@ type Profile = {
   department: string | null;
   phone: string | null;
   staff_id: string | null;
+  welpru_verified_at: string | null;
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -47,6 +48,11 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const [welpruVerifiedAt, setWelpruVerifiedAt] = useState<string | null>(null);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [requestingVerify, setRequestingVerify] = useState(false);
+  const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -65,7 +71,7 @@ export default function ProfilePage() {
 
       const { data, error } = await supabase
         .from("users")
-        .select("full_name, email, role, department, phone, staff_id")
+        .select("full_name, email, role, department, phone, staff_id, welpru_verified_at")
         .eq("id", user.id)
         .single();
 
@@ -76,6 +82,7 @@ export default function ProfilePage() {
       }
 
       setProfile(data as Profile);
+      setWelpruVerifiedAt((data as Profile).welpru_verified_at);
       setLoading(false);
     }
     load();
@@ -143,6 +150,52 @@ export default function ProfilePage() {
         : prev
     );
     setEditing(false);
+  }
+
+  async function handleRequestWelpruVerify() {
+    if (!profile?.staff_id || profile.staff_id.trim().length === 0) {
+      setVerifyMessage("กรุณากรอกและบันทึกรหัสบุคลากรก่อนขอยืนยัน");
+      return;
+    }
+    if (!consentChecked) {
+      setVerifyMessage("กรุณายอมรับเงื่อนไขการรับแจ้งเตือนก่อน");
+      return;
+    }
+
+    setRequestingVerify(true);
+    setVerifyMessage(null);
+
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      setVerifyMessage("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setRequestingVerify(false);
+      return;
+    }
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/request-welpru-verify`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ staff_id: profile.staff_id }),
+      }
+    );
+
+    setRequestingVerify(false);
+
+    if (!response.ok) {
+      setVerifyMessage("ส่งคำขอยืนยันไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      return;
+    }
+
+    setVerifyMessage("ส่งแจ้งเตือนทดสอบไปยัง WeLPRU แล้ว กรุณาแตะลิงก์ในแอปเพื่อยืนยัน");
   }
 
   async function handleSignOut() {
@@ -307,6 +360,44 @@ export default function ProfilePage() {
             <p className="mt-1 text-sm text-text-secondary">
               เร็วๆ นี้ — ระบบแจ้งเตือนผ่าน LINE อยู่ระหว่างการพัฒนา
             </p>
+          </Card>
+
+          <Card className="mt-4">
+            <p className="font-medium text-text-primary">
+              ยืนยันการรับแจ้งเตือนผ่าน WeLPRU
+            </p>
+            {welpruVerifiedAt ? (
+              <p className="mt-1 text-sm text-success-text">
+                ✅ ยืนยันแล้วเมื่อ{" "}
+                {new Date(welpruVerifiedAt).toLocaleDateString("th-TH", {
+                  dateStyle: "medium",
+                })}
+              </p>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-text-secondary">
+                  ยืนยันตัวตนเพื่อรับการแจ้งเตือนผ่านแอป WeLPRU — ระบบจะส่งข้อความทดสอบไปยังแอปของท่าน
+                  กรุณาแตะลิงก์ในข้อความเพื่อยืนยันว่าเป็นเจ้าของบัญชีจริง
+                </p>
+                <label className="mt-3 flex items-start gap-2 text-sm text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={consentChecked}
+                    onChange={(e) => setConsentChecked(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  ข้าพเจ้ายินยอมให้ระบบส่งการแจ้งเตือนผ่านแอป WeLPRU ไปยังรหัสบุคลากรที่ระบุไว้
+                </label>
+                {verifyMessage && (
+                  <p className="mt-2 text-sm text-text-secondary">{verifyMessage}</p>
+                )}
+                <div className="mt-3">
+                  <Button onClick={handleRequestWelpruVerify} disabled={requestingVerify}>
+                    {requestingVerify ? "กำลังส่ง..." : "ยืนยันการรับแจ้งเตือนผ่าน WeLPRU"}
+                  </Button>
+                </div>
+              </>
+            )}
           </Card>
 
           <div className="mt-4">
