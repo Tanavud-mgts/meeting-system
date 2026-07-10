@@ -450,3 +450,9 @@ verify_jwt = true
 
 [functions.complete-setup]
 verify_jwt = true
+
+[functions.request-welpru-verify]
+verify_jwt = true
+
+[functions.confirm-welpru-verify]
+verify_jwt = true
