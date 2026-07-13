@@ -52,4 +52,16 @@ describe("validateNotificationSettings", () => {
   it("event value ไม่ใช่ object → error", () => {
     expect(validateNotificationSettings({ booking_approved: "x" }).ok).toBe(false);
   });
+
+  it("returned value is a defensive copy (not same reference as input)", () => {
+    const input = {
+      booking_approved: { discord: false, welpru: true },
+    };
+    const r = validateNotificationSettings(input);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value).not.toBe(input);
+      expect(r.value.booking_approved).not.toBe(input.booking_approved);
+    }
+  });
 });

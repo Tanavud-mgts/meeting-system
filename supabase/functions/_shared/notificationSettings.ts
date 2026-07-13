@@ -29,6 +29,8 @@ export function validateNotificationSettings(input: unknown): Result {
 
   const obj = input as Record<string, unknown>;
 
+  const copiedSettings: NotificationSettings = {};
+
   for (const [eventKey, rawSetting] of Object.entries(obj)) {
     if (!VALID_EVENTS.has(eventKey)) {
       return { ok: false, error: `เหตุการณ์ไม่ถูกต้อง: ${eventKey}` };
@@ -56,7 +58,9 @@ export function validateNotificationSettings(input: unknown): Result {
     if (typeof setting.body === "string" && setting.body.length > MAX_BODY) {
       return { ok: false, error: `เนื้อหาของ ${eventKey} ยาวเกิน ${MAX_BODY} ตัวอักษร` };
     }
+
+    copiedSettings[eventKey] = { ...setting } as EventSetting;
   }
 
-  return { ok: true, value: obj as NotificationSettings };
+  return { ok: true, value: copiedSettings };
 }
