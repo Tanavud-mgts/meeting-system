@@ -462,3 +462,6 @@ verify_jwt = false
 
 [functions.generate-line-otp]
 verify_jwt = true
+
+[functions.update-notification-settings]
+verify_jwt = true
