@@ -78,6 +78,7 @@ export async function notifyBookingSubmitted(
       eventKey: "booking_submitted",
       recipients: [{ userId: chain.admin_id }],
       variables: baseVars(d),
+      lineApproval: { bookingId, step: 1, approverId: chain.admin_id },
     });
   } catch (err) {
     console.error("[notifyBookingSubmitted]", err);
@@ -123,6 +124,7 @@ export async function notifyApprovalOutcome(
         eventKey: "booking_step_approved",
         recipients: [{ userId: nextApprover }],
         variables: { ...base, step: String(result.step), approver: approverName },
+        lineApproval: { bookingId, step: result.currentStep + 1, approverId: nextApprover },
       });
     }
   } catch (err) {

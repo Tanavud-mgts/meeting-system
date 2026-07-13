@@ -161,6 +161,46 @@ describe("notifyBookingCancelledByAdmin", () => {
   });
 });
 
+describe("bookingNotify — lineApproval → approval_token (integration ผ่าน LINE channel)", () => {
+  const detailRow = {
+    requester_id: "req1", requester_name: "สมชาย", room_name: "ห้อง A",
+    start_time: "2026-07-15T02:00:00Z", end_time: "2026-07-15T05:00:00Z", cancellation_reason: null,
+  };
+  // system_config รวมทั้ง chain (admin/approver) และ toggle (line_enabled=true)
+  const cfgRow = {
+    admin_id: "adm1", approver1_id: "apv1", approver2_id: "apv2",
+    welpru_enabled: false, discord_enabled: false, line_enabled: true, notification_settings: {},
+  };
+
+  function tokenCaptureResponder() {
+    return (ctx: DbCallContext) => {
+      if (ctx.table === "booking_detail") return { data: detailRow };
+      if (ctx.table === "system_config") return { data: cfgRow };
+      if (ctx.table === "users" && ctx.op === "select")
+        return { data: { full_name: "ผู้อนุมัติ", line_user_id: "U_line", staff_id: null, welpru_verified_at: null } };
+      if (ctx.table === "integration_health" && ctx.op === "select") return { count: 0 };
+      if (ctx.table === "approval_tokens" && ctx.op === "insert") return { data: { id: "tok-1" } };
+      return {}; // notifications insert, integration_health insert (log)
+    };
+  }
+
+  it("notifyBookingSubmitted → approval_token { booking_id, step:1, approver_id: admin }", async () => {
+    const { client, calls } = makeClient(tokenCaptureResponder());
+    await notifyBookingSubmitted(client as never, "b1");
+    const tok = calls.find((c: DbCallContext) => c.table === "approval_tokens" && c.op === "insert");
+    expect(tok?.payload).toMatchObject({ booking_id: "b1", step: 1, approver_id: "adm1" });
+  });
+
+  it("notifyApprovalOutcome step-approved → approval_token { booking_id, step:2, approver_id: approver1 }", async () => {
+    const { client, calls } = makeClient(tokenCaptureResponder());
+    await notifyApprovalOutcome(client as never, "b1", {
+      bookingId: "b1", step: 1, action: "approved", currentStep: 1, finalStatus: "pending",
+    });
+    const tok = calls.find((c: DbCallContext) => c.table === "approval_tokens" && c.op === "insert");
+    expect(tok?.payload).toMatchObject({ booking_id: "b1", step: 2, approver_id: "apv1" });
+  });
+});
+
 describe("bookingNotify ไม่ throw เมื่อ db พัง", () => {
   it("booking_detail ไม่พบ → เงียบ ไม่ throw ไม่ insert (notifyBookingSubmitted)", async () => {
     const { client, calls } = makeClient((ctx) => {
