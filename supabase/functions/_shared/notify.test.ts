@@ -287,3 +287,35 @@ describe("notifyAndLog — Discord/WeLPRU channel gating", () => {
     expect(inserts).toHaveLength(1);
   });
 });
+
+describe("line_quota_warning event (registry)", () => {
+  it("buildNotification มี default title/body/link", () => {
+    const n = buildNotification("line_quota_warning", { sent: "410" });
+    expect(n.title).toBe("⚠️ โควตา LINE ใกล้เต็ม");
+    expect(n.body).toBe("เดือนนี้ส่งไปแล้ว 410/500 ข้อความ เมื่อครบโควตาระบบจะหยุดส่งทาง LINE อัตโนมัติ");
+    expect(n.link).toBe("/dashboard/integrations");
+  });
+});
+
+describe("notifyAndLog — line_enabled config", () => {
+  const vars = { booker: "สมชาย", room: "ห้อง A", date: "15 ก.ค. 69", time: "09:00–12:00 น." };
+
+  it("line_enabled=false (default) + มี lineApproval → ไม่มี logIntegration service=line", async () => {
+    const { client, calls } = makeClient((ctx) => {
+      if (ctx.table === "system_config")
+        return { data: { welpru_enabled: false, discord_enabled: false, line_enabled: false, notification_settings: {} } };
+      if (ctx.table === "notifications" && ctx.op === "insert") return {};
+      throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
+    });
+    await notifyAndLog(client as never, {
+      eventKey: "booking_submitted",
+      recipients: [{ userId: "adm1" }],
+      variables: vars,
+      lineApproval: { bookingId: "b1", step: 1, approverId: "adm1" },
+    });
+    const lineLogs = calls.filter(
+      (c: DbCallContext) => c.table === "integration_health" && c.payload?.service === "line"
+    );
+    expect(lineLogs).toHaveLength(0);
+  });
+});

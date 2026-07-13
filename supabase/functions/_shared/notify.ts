@@ -48,7 +48,8 @@ export type EventKey =
   | "cancellation_requested"
   | "cancellation_approved"
   | "cancellation_denied"
-  | "booking_cancelled";
+  | "booking_cancelled"
+  | "line_quota_warning";
 
 interface EventDefault {
   title: string;
@@ -97,11 +98,17 @@ const EVENT_DEFAULTS: Record<EventKey, EventDefault> = {
     body: "การจอง{room} วันที่ {date} เวลา {time} ถูกยกเลิก เหตุผล: {reason}",
     link: "/profile/bookings",
   },
+  line_quota_warning: {
+    title: "⚠️ โควตา LINE ใกล้เต็ม",
+    body: "เดือนนี้ส่งไปแล้ว {sent}/500 ข้อความ เมื่อครบโควตาระบบจะหยุดส่งทาง LINE อัตโนมัติ",
+    link: "/dashboard/integrations",
+  },
 };
 
 export interface EventOverride {
   discord?: boolean;
   welpru?: boolean;
+  line?: boolean;
   title?: string | null;
   body?: string | null;
 }
@@ -131,6 +138,7 @@ const DISCORD_MESSAGE_TEMPLATES: Record<EventKey, string> = {
   cancellation_approved: "✅ ยกเลิกแล้ว — {room} · {date}",
   cancellation_denied: "❌ ไม่อนุมัติยกเลิก — {room} · {date}",
   booking_cancelled: "⚠️ Admin ยกเลิก — {room} · {date}",
+  line_quota_warning: "⚠️ LINE quota: {sent}/500",
 };
 
 function buildDiscordMessage(eventKey: EventKey, vars: Record<string, string>): string {
@@ -145,6 +153,7 @@ export interface NotifyParams {
   eventKey: EventKey;
   recipients: NotifyRecipient[];
   variables: Record<string, string>;
+  lineApproval?: { bookingId: string; step: number; approverId: string };
 }
 
 // ★ Fire-and-Forget: insert แจ้งเตือน in-app รายผู้รับ ไม่ throw เด็ดขาด
@@ -228,12 +237,14 @@ export async function notifyAndLog(
 interface NotificationConfig {
   welpruEnabled: boolean;
   discordEnabled: boolean;
+  lineEnabled: boolean;
   settings: Record<string, EventOverride>;
 }
 
 const CONFIG_DISABLED: NotificationConfig = {
   welpruEnabled: false,
   discordEnabled: false,
+  lineEnabled: false,
   settings: {},
 };
 
@@ -244,17 +255,19 @@ async function loadNotificationConfig(client: SupabaseClient): Promise<Notificat
   try {
     const { data, error } = await client
       .from("system_config")
-      .select("welpru_enabled, discord_enabled, notification_settings")
+      .select("welpru_enabled, discord_enabled, line_enabled, notification_settings")
       .single();
     if (error || !data) return CONFIG_DISABLED;
     const row = data as {
       welpru_enabled: boolean | null;
       discord_enabled: boolean | null;
+      line_enabled: boolean | null;
       notification_settings: Record<string, EventOverride> | null;
     };
     return {
       welpruEnabled: row.welpru_enabled ?? false,
       discordEnabled: row.discord_enabled ?? false,
+      lineEnabled: row.line_enabled ?? false,
       settings: row.notification_settings ?? {},
     };
   } catch (err) {

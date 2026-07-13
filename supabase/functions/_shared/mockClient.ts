@@ -68,6 +68,10 @@ export function makeClient(responder: Responder): MockClient {
         state.filters.push([key, value]);
         return builder;
       },
+      gte(key: string, value: unknown) {
+        state.filters.push([key, value]);
+        return builder;
+      },
       single() {
         state.single = true;
         return builder;
