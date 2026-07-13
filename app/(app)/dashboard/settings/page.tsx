@@ -432,8 +432,8 @@ export default function DashboardSettingsPage() {
                       <div>
                         <div className="flex items-center justify-between">
                           <label className="text-xs text-text-secondary">หัวข้อ</label>
-                          <span className={`text-xs ${titleLen > 50 ? "text-danger-text" : "text-text-muted"}`}>
-                            {titleLen}/50
+                          <span className={`text-xs ${titleLen > 200 ? "text-danger-text" : "text-text-muted"}`}>
+                            {titleLen}/200
                           </span>
                         </div>
                         <input
@@ -441,14 +441,15 @@ export default function DashboardSettingsPage() {
                           value={st.title}
                           placeholder={m.defaultTitle}
                           onChange={(e) => updateNotif(m.key, { title: e.target.value })}
+                          maxLength={200}
                           className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
                         />
                       </div>
                       <div>
                         <div className="flex items-center justify-between">
                           <label className="text-xs text-text-secondary">เนื้อหา</label>
-                          <span className={`text-xs ${bodyLen > 250 ? "text-danger-text" : "text-text-muted"}`}>
-                            {bodyLen}/250
+                          <span className={`text-xs ${bodyLen > 1000 ? "text-danger-text" : "text-text-muted"}`}>
+                            {bodyLen}/1000
                           </span>
                         </div>
                         <textarea
@@ -456,6 +457,7 @@ export default function DashboardSettingsPage() {
                           placeholder={m.defaultBody}
                           onChange={(e) => updateNotif(m.key, { body: e.target.value })}
                           rows={2}
+                          maxLength={1000}
                           className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
                         />
                       </div>

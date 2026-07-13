@@ -44,7 +44,7 @@ Deno.serve(
       typeof body.discord_enabled !== "boolean" ||
       typeof body.line_enabled !== "boolean"
     ) {
-      throw new ValidationError("ค่าเปิ/ปิดช่องทางไม่ถูกต้อง");
+      throw new ValidationError("ค่าเปิด/ปิดช่องทางไม่ถูกต้อง");
     }
 
     const validated = validateNotificationSettings(body.notification_settings);
