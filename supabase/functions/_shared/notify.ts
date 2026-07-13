@@ -107,6 +107,19 @@ const EVENT_DEFAULTS: Record<EventKey, EventDefault> = {
   },
 };
 
+// รายชื่อ event keys ทั้งหมด (source of truth สำหรับ validator/UI) — ต้องครบตาม EventKey
+export const EVENT_KEYS: EventKey[] = [
+  "booking_submitted",
+  "booking_step_approved",
+  "booking_approved",
+  "booking_rejected",
+  "cancellation_requested",
+  "cancellation_approved",
+  "cancellation_denied",
+  "booking_cancelled",
+  "line_quota_warning",
+];
+
 export interface EventOverride {
   discord?: boolean;
   welpru?: boolean;
