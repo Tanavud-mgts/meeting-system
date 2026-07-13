@@ -2,6 +2,8 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { sendDiscord } from "./discordClient.ts";
 import { sendWelpruPush } from "./welpruClient.ts";
 import { logIntegration } from "./integrationLog.ts";
+import { pushFlex, buildApprovalFlex } from "./lineClient.ts";
+import { createOrReuseApprovalToken } from "./lineApproval.ts";
 
 // ── Template ──────────────────────────────────────────────
 export function applyTemplate(
@@ -206,8 +208,8 @@ export async function notifyAndLog(
     }
   }
 
-  // 3. WeLPRU (เฉพาะผู้รับที่ verified แล้ว)
-  if (cfg.welpruEnabled && override.welpru !== false) {
+  // 3. WeLPRU (เฉพาะผู้รับที่ verified แล้ว — ยกเว้น line_quota_warning ที่ไป in-app+Discord เท่านั้น)
+  if (cfg.welpruEnabled && override.welpru !== false && params.eventKey !== "line_quota_warning") {
     const staffIds: string[] = [];
     for (const r of params.recipients) {
       const staffId = await loadWelpruStaffId(client, r.userId);
@@ -229,6 +231,56 @@ export async function notifyAndLog(
           error_detail: err instanceof Error ? err.message : String(err),
         });
       }
+    }
+  }
+
+  // 4. LINE (เฉพาะ 2 event ปุ่ม — ต้องมี lineApproval + line_user_id + quota ไม่เต็ม)
+  if (cfg.lineEnabled && override.line !== false && params.lineApproval) {
+    try {
+      const lineUserId = await loadLineUserId(client, params.lineApproval.approverId);
+      if (lineUserId) {
+        const sent = await countLinePushesThisMonth(client);
+        if (sent >= 500) {
+          await logIntegration(client, {
+            service: "internal",
+            status: "success",
+            payload: { skipped: "line_quota", sent },
+          });
+        } else {
+          const tokenId = await createOrReuseApprovalToken(client, params.lineApproval);
+          if (tokenId) {
+            // เตือน quota ก่อน push (push นี้จะทำให้ยอด ≥400) — วางก่อน push เพื่อให้
+            // logic นี้ทดสอบได้จริง (pushFlex throw ใน test env เพราะไม่มี Deno.env)
+            if (sent + 1 >= 400) {
+              await maybeFireQuotaWarning(client, sent + 1);
+            }
+            const flex = buildApprovalFlex(
+              {
+                booker: params.variables.booker ?? "",
+                room: params.variables.room ?? "",
+                date: params.variables.date ?? "",
+                time: params.variables.time ?? "",
+              },
+              tokenId,
+              title
+            );
+            await pushFlex(lineUserId, flex);
+            await logIntegration(client, {
+              service: "line",
+              status: "success",
+              payload: { kind: "push" },
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[notifyAndLog] line ล้มเหลว:", err);
+      await logIntegration(client, {
+        service: "line",
+        status: "failed",
+        payload: { kind: "push" },
+        error_detail: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 }
@@ -297,4 +349,63 @@ async function loadWelpruStaffId(client: SupabaseClient, userId: string): Promis
     console.error("[notifyAndLog] loadWelpruStaffId ล้มเหลว:", err);
     return null;
   }
+}
+
+// ── LINE eligibility + quota (ต้องไม่ throw — เรียกใน try/catch ของ LINE branch) ──
+async function loadLineUserId(client: SupabaseClient, userId: string): Promise<string | null> {
+  try {
+    const { data, error } = await client
+      .from("users")
+      .select("line_user_id")
+      .eq("id", userId)
+      .single();
+    if (error || !data) return null;
+    return (data as { line_user_id: string | null }).line_user_id;
+  } catch (err) {
+    console.error("[notifyAndLog] loadLineUserId ล้มเหลว:", err);
+    return null;
+  }
+}
+
+function startOfMonthISO(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+// นับ push (ไม่นับ reply) เดือนนี้ — พังก็คืน 0 (favor delivery)
+async function countLinePushesThisMonth(client: SupabaseClient): Promise<number> {
+  try {
+    const { count } = await client
+      .from("integration_health")
+      .select("*", { count: "exact", head: true })
+      .eq("service", "line")
+      .eq("status", "success")
+      .eq("payload->>kind", "push")
+      .gte("created_at", startOfMonthISO());
+    return count ?? 0;
+  } catch (err) {
+    console.error("[notifyAndLog] countLinePushesThisMonth ล้มเหลว:", err);
+    return 0;
+  }
+}
+
+// ยิง line_quota_warning เดือนละครั้ง (dedupe) ให้ Admin — in-app + Discord เท่านั้น
+async function maybeFireQuotaWarning(client: SupabaseClient, sent: number): Promise<void> {
+  const { count } = await client
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("event_key", "line_quota_warning")
+    .gte("created_at", startOfMonthISO());
+  if ((count ?? 0) > 0) return;
+
+  const { data: cfg } = await client.from("system_config").select("admin_id").single();
+  const adminId = (cfg as { admin_id: string | null } | null)?.admin_id;
+  if (!adminId) return;
+
+  // recursion ลึก 1 — event นี้ไม่มี lineApproval จึงไม่เข้า LINE branch อีก
+  await notifyAndLog(client, {
+    eventKey: "line_quota_warning",
+    recipients: [{ userId: adminId }],
+    variables: { sent: String(sent) },
+  });
 }

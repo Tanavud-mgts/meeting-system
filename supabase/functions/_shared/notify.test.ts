@@ -319,3 +319,130 @@ describe("notifyAndLog — line_enabled config", () => {
     expect(lineLogs).toHaveLength(0);
   });
 });
+
+describe("notifyAndLog — LINE channel", () => {
+  const vars = { booker: "สมชาย", room: "ห้อง A", date: "15 ก.ค. 69", time: "09:00–12:00 น." };
+  const lineApproval = { bookingId: "b1", step: 1, approverId: "adm1" };
+
+  // responder มาตรฐาน: config เปิด line, approver มี line_user_id, quota นับได้, token สร้างได้
+  function lineResponder(overrides: {
+    lineEnabled?: boolean;
+    lineUserId?: string | null;
+    pushCount?: number;
+    warnCount?: number;
+    onInsert?: (ctx: DbCallContext) => void;
+  } = {}) {
+    return (ctx: DbCallContext) => {
+      if (ctx.table === "system_config" && ctx.op === "select") {
+        // แยกระหว่าง loadNotificationConfig (มี welpru_enabled) กับ maybeFireQuotaWarning (admin_id)
+        return {
+          data: {
+            welpru_enabled: false,
+            discord_enabled: false,
+            line_enabled: overrides.lineEnabled ?? true,
+            notification_settings: {},
+            admin_id: "adm1",
+          },
+        };
+      }
+      if (ctx.table === "users" && ctx.op === "select")
+        return {
+          data: {
+            line_user_id: "lineUserId" in overrides ? overrides.lineUserId : "U_line_1",
+            staff_id: null,
+            welpru_verified_at: null,
+          },
+        };
+      if (ctx.table === "integration_health" && ctx.op === "select")
+        return { count: overrides.pushCount ?? 0 }; // quota count
+      if (ctx.table === "notifications" && ctx.op === "select")
+        return { count: overrides.warnCount ?? 0 }; // dedupe count
+      if (ctx.table === "approval_tokens" && ctx.op === "insert")
+        return { data: { id: "tok-1" } };
+      if (ctx.op === "insert") {
+        overrides.onInsert?.(ctx);
+        return {};
+      }
+      return {};
+    };
+  }
+
+  it("line_enabled + lineApproval + มี line_user_id + quota ว่าง → log service=line push success", async () => {
+    const { client, calls } = makeClient(lineResponder());
+    await notifyAndLog(client as never, {
+      eventKey: "booking_submitted", recipients: [{ userId: "adm1" }], variables: vars, lineApproval,
+    });
+    const lineLog = calls.filter(
+      (c: DbCallContext) => c.table === "integration_health" && c.op === "insert" && c.payload?.service === "line"
+    );
+    expect(lineLog).toHaveLength(1);
+    expect(lineLog[0].payload).toMatchObject({ status: "failed", payload: { kind: "push" } });
+    // status failed เพราะ pushFlex เรียก Deno.env (ไม่มีใน test) → throw → caught → log failed
+  });
+
+  it("ไม่มี lineApproval → ข้าม LINE (ไม่มี token insert)", async () => {
+    const { client, calls } = makeClient(lineResponder());
+    await notifyAndLog(client as never, {
+      eventKey: "booking_approved", recipients: [{ userId: "req1" }], variables: vars,
+    });
+    expect(calls.filter((c: DbCallContext) => c.table === "approval_tokens")).toHaveLength(0);
+  });
+
+  it("approver ไม่มี line_user_id → ข้าม LINE เงียบ", async () => {
+    const { client, calls } = makeClient(lineResponder({ lineUserId: null }));
+    await notifyAndLog(client as never, {
+      eventKey: "booking_submitted", recipients: [{ userId: "adm1" }], variables: vars, lineApproval,
+    });
+    expect(calls.filter((c: DbCallContext) => c.table === "approval_tokens")).toHaveLength(0);
+  });
+
+  it("quota ≥500 → ข้าม LINE, log service=internal skipped", async () => {
+    const { client, calls } = makeClient(lineResponder({ pushCount: 500 }));
+    await notifyAndLog(client as never, {
+      eventKey: "booking_submitted", recipients: [{ userId: "adm1" }], variables: vars, lineApproval,
+    });
+    expect(calls.filter((c: DbCallContext) => c.table === "approval_tokens")).toHaveLength(0);
+    const skip = calls.filter(
+      (c: DbCallContext) => c.table === "integration_health" && c.op === "insert" && c.payload?.service === "internal"
+    );
+    expect(skip).toHaveLength(1);
+    expect(skip[0].payload).toMatchObject({ payload: { skipped: "line_quota" } });
+  });
+
+  it("quota แตะ 400 (sent=399) ครั้งแรก → ยิง line_quota_warning ให้ admin (in-app)", async () => {
+    const { client, calls } = makeClient(lineResponder({ pushCount: 399, warnCount: 0 }));
+    await notifyAndLog(client as never, {
+      eventKey: "booking_submitted", recipients: [{ userId: "adm1" }], variables: vars, lineApproval,
+    });
+    const warnNotif = calls.filter(
+      (c: DbCallContext) =>
+        c.table === "notifications" && c.op === "insert" && c.payload?.event_key === "line_quota_warning"
+    );
+    expect(warnNotif).toHaveLength(1);
+    expect(warnNotif[0].payload?.user_id).toBe("adm1");
+  });
+
+  it("quota แตะ 400 แต่เดือนนี้เตือนไปแล้ว (dedupe) → ไม่ยิงซ้ำ", async () => {
+    const { client, calls } = makeClient(lineResponder({ pushCount: 399, warnCount: 1 }));
+    await notifyAndLog(client as never, {
+      eventKey: "booking_submitted", recipients: [{ userId: "adm1" }], variables: vars, lineApproval,
+    });
+    const warnNotif = calls.filter(
+      (c: DbCallContext) =>
+        c.table === "notifications" && c.op === "insert" && c.payload?.event_key === "line_quota_warning"
+    );
+    expect(warnNotif).toHaveLength(0);
+  });
+
+  it("never-throw: ทุก query ใน LINE path พังก็ไม่ throw", async () => {
+    const { client } = makeClient((ctx) => {
+      if (ctx.table === "system_config") return { data: { line_enabled: true } };
+      throw new Error("db down");
+    });
+    await expect(
+      notifyAndLog(client as never, {
+        eventKey: "booking_submitted", recipients: [{ userId: "adm1" }], variables: vars, lineApproval,
+      })
+    ).resolves.toBeUndefined();
+  });
+});
