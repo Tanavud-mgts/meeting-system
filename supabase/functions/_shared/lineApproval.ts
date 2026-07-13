@@ -119,6 +119,16 @@ export async function handleLinkCommand(
   }
   const userId = (consumed as { user_id: string }[])[0].user_id;
 
+  // consent ต้องถูกบันทึกก่อนผูกบัญชีเสมอ (PDPA) — ถ้า insert ล้มเหลว ห้ามผูก
+  // (consent ที่บันทึกแล้วแต่ link ล้มเหลวทีหลังไม่เป็นไร ผู้ใช้ยินยอมแล้วตอนสั่ง /link)
+  const { error: consentErr } = await client
+    .from("consent_records")
+    .insert({ user_id: userId, consent_type: "line_linking" });
+  if (consentErr) {
+    console.error("[handleLinkCommand] consent_records insert ล้มเหลว:", consentErr);
+    return { replyText: "เกิดข้อผิดพลาด กรุณาลองใหม่" };
+  }
+
   const { error: updErr } = await client
     .from("users")
     .update({ line_user_id: params.lineUserId })
@@ -130,6 +140,5 @@ export async function handleLinkCommand(
     return { replyText: "เกิดข้อผิดพลาด กรุณาลองใหม่" };
   }
 
-  await client.from("consent_records").insert({ user_id: userId, consent_type: "line_linking" });
   return { replyText: "✅ เชื่อมต่อบัญชี LINE สำเร็จ" };
 }

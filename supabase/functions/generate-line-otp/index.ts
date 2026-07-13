@@ -3,7 +3,9 @@ import { withErrorHandling } from "../_shared/handler.ts";
 import { UnauthorizedError, AppError } from "../_shared/errors.ts";
 
 function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return String(100000 + (arr[0] % 900000));
 }
 
 Deno.serve(

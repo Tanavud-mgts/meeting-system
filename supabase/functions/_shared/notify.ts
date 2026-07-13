@@ -390,22 +390,28 @@ async function countLinePushesThisMonth(client: SupabaseClient): Promise<number>
 }
 
 // ยิง line_quota_warning เดือนละครั้ง (dedupe) ให้ Admin — in-app + Discord เท่านั้น
+// ★ ต้องไม่ throw เด็ดขาด — ห่อ try/catch เอง ไม่พึ่ง try/catch ของ LINE branch ที่เรียกฟังก์ชันนี้
+//   (ไม่งั้น error ตรงนี้จะถูกบันทึกผิดเป็น service:'line', payload:{kind:'push'})
 async function maybeFireQuotaWarning(client: SupabaseClient, sent: number): Promise<void> {
-  const { count } = await client
-    .from("notifications")
-    .select("*", { count: "exact", head: true })
-    .eq("event_key", "line_quota_warning")
-    .gte("created_at", startOfMonthISO());
-  if ((count ?? 0) > 0) return;
+  try {
+    const { count } = await client
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("event_key", "line_quota_warning")
+      .gte("created_at", startOfMonthISO());
+    if ((count ?? 0) > 0) return;
 
-  const { data: cfg } = await client.from("system_config").select("admin_id").single();
-  const adminId = (cfg as { admin_id: string | null } | null)?.admin_id;
-  if (!adminId) return;
+    const { data: cfg } = await client.from("system_config").select("admin_id").single();
+    const adminId = (cfg as { admin_id: string | null } | null)?.admin_id;
+    if (!adminId) return;
 
-  // recursion ลึก 1 — event นี้ไม่มี lineApproval จึงไม่เข้า LINE branch อีก
-  await notifyAndLog(client, {
-    eventKey: "line_quota_warning",
-    recipients: [{ userId: adminId }],
-    variables: { sent: String(sent) },
-  });
+    // recursion ลึก 1 — event นี้ไม่มี lineApproval จึงไม่เข้า LINE branch อีก
+    await notifyAndLog(client, {
+      eventKey: "line_quota_warning",
+      recipients: [{ userId: adminId }],
+      variables: { sent: String(sent) },
+    });
+  } catch (err) {
+    console.error("[notifyAndLog] maybeFireQuotaWarning ล้มเหลว:", err);
+  }
 }

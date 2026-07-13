@@ -173,11 +173,26 @@ describe("handleLinkCommand", () => {
   it("LINE นี้ผูกบัญชีอื่นแล้ว (23505) → reply แจ้ง", async () => {
     const { client } = makeClient((ctx) => {
       if (ctx.table === "line_link_tokens" && ctx.op === "update") return { data: [{ user_id: "u1" }] };
+      if (ctx.table === "consent_records" && ctx.op === "insert") return {};
       if (ctx.table === "users" && ctx.op === "update")
         return { error: { code: "23505", message: "dup" } };
       throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
     });
     const r = await handleLinkCommand(client as never, { otp: "123456", lineUserId: "U_line_1" });
     expect(r.replyText).toContain("ถูกเชื่อมกับผู้ใช้อื่น");
+  });
+
+  it("consent insert ล้มเหลว → reply เกิดข้อผิดพลาด ไม่แตะ users เลย (ห้าม link ถ้าไม่มี consent)", async () => {
+    const calls: DbCallContext[] = [];
+    const { client } = makeClient((ctx) => {
+      calls.push(ctx);
+      if (ctx.table === "line_link_tokens" && ctx.op === "update") return { data: [{ user_id: "u1" }] };
+      if (ctx.table === "consent_records" && ctx.op === "insert")
+        return { error: { code: "XXXXX", message: "insert failed" } };
+      throw new Error(`unexpected: ${ctx.table}.${ctx.op}`);
+    });
+    const r = await handleLinkCommand(client as never, { otp: "123456", lineUserId: "U_line_1" });
+    expect(r.replyText).toContain("เกิดข้อผิดพลาด");
+    expect(calls.find((c) => c.table === "users")).toBeUndefined();
   });
 });
