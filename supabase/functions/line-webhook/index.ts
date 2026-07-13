@@ -1,0 +1,97 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { verifyLineSignature, parsePostbackData, replyText } from "../_shared/lineClient.ts";
+import { handleApprovalPostback, handleLinkCommand } from "../_shared/lineApproval.ts";
+
+// line-webhook: verify_jwt=false (LINE เรียก, ใช้ signature แทน)
+// ต้องตอบ 200 เสมอยกเว้น signature ผิด (401) — กัน LINE retry ซ้ำ
+Deno.serve(async (req: Request) => {
+  if (req.method !== "POST") return new Response("ok", { status: 200 });
+
+  const rawBody = await req.text();
+  const signature = req.headers.get("X-Line-Signature") ?? "";
+  const secret = Deno.env.get("LINE_CHANNEL_SECRET") ?? "";
+
+  const valid = await verifyLineSignature(rawBody, signature, secret);
+  if (!valid) {
+    return new Response("invalid signature", { status: 401 });
+  }
+
+  const adminClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  let payload: { events?: LineEvent[] };
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return new Response("ok", { status: 200 });
+  }
+
+  for (const event of payload.events ?? []) {
+    try {
+      await handleEvent(adminClient, event);
+    } catch (err) {
+      // business/unexpected error → log แต่ยังตอบ 200 กัน LINE retry
+      console.error("[line-webhook] handleEvent", err);
+    }
+  }
+
+  return new Response("ok", { status: 200 });
+});
+
+interface LineEvent {
+  type: string;
+  replyToken?: string;
+  source?: { userId?: string };
+  postback?: { data: string };
+  message?: { type: string; text?: string };
+}
+
+async function handleEvent(
+  // deno-lint-ignore no-explicit-any
+  client: any,
+  event: LineEvent
+): Promise<void> {
+  const lineUserId = event.source?.userId;
+  const replyToken = event.replyToken;
+
+  // postback อนุมัติ/ปฏิเสธ
+  if (event.type === "postback" && event.postback && lineUserId && replyToken) {
+    const parsed = parsePostbackData(event.postback.data);
+    if (!parsed) return;
+    const { replyText: text } = await handleApprovalPostback(client, {
+      tokenId: parsed.token,
+      action: parsed.action,
+      lineUserId,
+    });
+    await replyText(replyToken, text);
+    return;
+  }
+
+  // message
+  if (event.type === "message" && event.message?.type === "text" && lineUserId && replyToken) {
+    const text = (event.message.text ?? "").trim();
+    const linkMatch = text.match(/^\/link\s+(\d{6})$/);
+    if (linkMatch) {
+      const { replyText: r } = await handleLinkCommand(client, { otp: linkMatch[1], lineUserId });
+      await replyText(replyToken, r);
+      return;
+    }
+    await replyText(
+      replyToken,
+      "พิมพ์ /link ตามด้วยรหัส 6 หลักจากหน้าโปรไฟล์ เพื่อเชื่อมบัญชี"
+    );
+    return;
+  }
+
+  // follow (เพิ่มเพื่อนครั้งแรก)
+  if (event.type === "follow" && replyToken) {
+    await replyText(
+      replyToken,
+      "ยินดีต้อนรับสู่ระบบจองห้องประชุม LPRU 🔔\nเชื่อมบัญชีโดยไปที่หน้าโปรไฟล์ในเว็บ กด \"เชื่อมต่อ LINE\" แล้วพิมพ์ /link ตามด้วยรหัส 6 หลัก"
+    );
+    return;
+  }
+  // event อื่น (unfollow, sticker ฯลฯ) → เมิน
+}
