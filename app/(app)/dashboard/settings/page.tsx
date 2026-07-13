@@ -217,6 +217,17 @@ export default function DashboardSettingsPage() {
     }
   }
 
+  function updateNotif(key: string, patch: Partial<NotifEventState>) {
+    setNotifState((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+  }
+  function toggleChannel(key: string, ch: Channel) {
+    setNotifState((prev) => {
+      const cur = prev[key];
+      const channelOff = { ...cur.channelOff, [ch]: !cur.channelOff[ch] };
+      return { ...prev, [key]: { ...cur, channelOff } };
+    });
+  }
+
   return (
     <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
       <h1 className="text-2xl font-semibold text-text-primary">
@@ -387,7 +398,88 @@ export default function DashboardSettingsPage() {
             </div>
           </Card>
 
-          {/* Task 5 จะเพิ่ม per-event Card ตรงนี้ */}
+          <Card>
+            <p className="font-medium text-text-primary">ตั้งค่ารายเหตุการณ์</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              เปิด/ปิดช่องทางและแก้ข้อความแต่ละเหตุการณ์ — เว้นว่างข้อความไว้เพื่อใช้ค่าเริ่มต้น
+            </p>
+            <div className="mt-4 space-y-6">
+              {EVENT_META.map((m) => {
+                const st = notifState[m.key];
+                if (!st) return null;
+                const titleLen = st.title.trim().length;
+                const bodyLen = st.body.trim().length;
+                const previewTitle = applyTemplate(st.title.trim() || m.defaultTitle, PREVIEW_VARS);
+                const previewBody = applyTemplate(st.body.trim() || m.defaultBody, PREVIEW_VARS);
+                return (
+                  <div key={m.key} className="border-t border-neutral-100 pt-4 first:border-0 first:pt-0">
+                    <p className="text-sm font-medium text-text-primary">{m.label}</p>
+
+                    <div className="mt-2 flex flex-wrap gap-4">
+                      {m.channels.map((ch) => (
+                        <label key={ch} className="flex items-center gap-2 text-sm text-text-secondary">
+                          <input
+                            type="checkbox"
+                            checked={!st.channelOff[ch]}
+                            onChange={() => toggleChannel(m.key, ch)}
+                          />
+                          {CHANNEL_LABEL[ch]}
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs text-text-secondary">หัวข้อ</label>
+                          <span className={`text-xs ${titleLen > 50 ? "text-danger-text" : "text-text-muted"}`}>
+                            {titleLen}/50
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={st.title}
+                          placeholder={m.defaultTitle}
+                          onChange={(e) => updateNotif(m.key, { title: e.target.value })}
+                          className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs text-text-secondary">เนื้อหา</label>
+                          <span className={`text-xs ${bodyLen > 250 ? "text-danger-text" : "text-text-muted"}`}>
+                            {bodyLen}/250
+                          </span>
+                        </div>
+                        <textarea
+                          value={st.body}
+                          placeholder={m.defaultBody}
+                          onChange={(e) => updateNotif(m.key, { body: e.target.value })}
+                          rows={2}
+                          className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+                        />
+                      </div>
+                      {(st.title.trim() || st.body.trim()) && (
+                        <button
+                          type="button"
+                          onClick={() => updateNotif(m.key, { title: "", body: "" })}
+                          className="text-xs text-brand-primary hover:underline"
+                        >
+                          คืนค่าเริ่มต้น
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="mt-2 rounded-sm bg-neutral-100 px-3 py-2">
+                      <p className="text-xs text-text-muted">ตัวอย่าง:</p>
+                      <p className="text-sm font-medium text-text-primary">{previewTitle}</p>
+                      <p className="text-sm text-text-secondary">{previewBody}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
 
           {notifError && <p className="text-sm text-danger-text">{notifError}</p>}
           {notifSuccess && <p className="text-sm text-success-text">{notifSuccess}</p>}
