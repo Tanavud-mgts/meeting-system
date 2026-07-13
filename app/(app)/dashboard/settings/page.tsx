@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { EVENT_META, CHANNEL_LABEL, PREVIEW_VARS, applyTemplate, type Channel } from "@/lib/notifications/eventMeta";
 
 type ChainUser = {
   id: string;
@@ -26,6 +27,20 @@ export default function DashboardSettingsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // per-event editor state: channelOff = ช่องที่ปิด, title/body = "" หมายถึงใช้ default
+  type NotifEventState = {
+    channelOff: Partial<Record<Channel, boolean>>;
+    title: string;
+    body: string;
+  };
+  const [welpruEnabled, setWelpruEnabled] = useState(false);
+  const [discordEnabled, setDiscordEnabled] = useState(false);
+  const [lineEnabled, setLineEnabled] = useState(false);
+  const [notifState, setNotifState] = useState<Record<string, NotifEventState>>({});
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [notifError, setNotifError] = useState<string | null>(null);
+  const [notifSuccess, setNotifSuccess] = useState<string | null>(null);
+
   async function loadSettings() {
     setLoading(true);
     setLoadError(null);
@@ -36,7 +51,7 @@ export default function DashboardSettingsPage() {
       supabase
         .from("system_config")
         .select(
-          "admin_id, approver1_id, approver2_id, office_start_hour, office_end_hour, holidays"
+          "admin_id, approver1_id, approver2_id, office_start_hour, office_end_hour, holidays, welpru_enabled, discord_enabled, line_enabled, notification_settings"
         )
         .single(),
       supabase
@@ -59,6 +74,21 @@ export default function DashboardSettingsPage() {
     setOfficeStartHour(String(configRes.data.office_start_hour));
     setOfficeEndHour(String(configRes.data.office_end_hour));
     setHolidays((configRes.data.holidays ?? []) as string[]);
+    setWelpruEnabled(configRes.data.welpru_enabled ?? false);
+    setDiscordEnabled(configRes.data.discord_enabled ?? false);
+    setLineEnabled(configRes.data.line_enabled ?? false);
+    const saved = (configRes.data.notification_settings ?? {}) as Record<
+      string,
+      { discord?: boolean; welpru?: boolean; line?: boolean; title?: string | null; body?: string | null }
+    >;
+    const initial: Record<string, NotifEventState> = {};
+    for (const m of EVENT_META) {
+      const s = saved[m.key] ?? {};
+      const channelOff: Partial<Record<Channel, boolean>> = {};
+      for (const ch of m.channels) if (s[ch] === false) channelOff[ch] = true;
+      initial[m.key] = { channelOff, title: s.title ?? "", body: s.body ?? "" };
+    }
+    setNotifState(initial);
     setLoading(false);
   }
 
@@ -126,6 +156,64 @@ export default function DashboardSettingsPage() {
       setFormError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function buildNotificationSettings() {
+    const out: Record<string, Record<string, unknown>> = {};
+    for (const m of EVENT_META) {
+      const st = notifState[m.key];
+      if (!st) continue;
+      const entry: Record<string, unknown> = {};
+      for (const ch of m.channels) if (st.channelOff[ch]) entry[ch] = false;
+      if (st.title.trim()) entry.title = st.title.trim();
+      if (st.body.trim()) entry.body = st.body.trim();
+      if (Object.keys(entry).length > 0) out[m.key] = entry;
+    }
+    return out;
+  }
+
+  async function handleSaveNotif() {
+    setNotifSaving(true);
+    setNotifError(null);
+    setNotifSuccess(null);
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      setNotifError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setNotifSaving(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/update-notification-settings`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            welpru_enabled: welpruEnabled,
+            discord_enabled: discordEnabled,
+            line_enabled: lineEnabled,
+            notification_settings: buildNotificationSettings(),
+          }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) {
+        setNotifError(result.message ?? "บันทึกไม่สำเร็จ กรุณาลองใหม่");
+        return;
+      }
+      setNotifSuccess("บันทึกการตั้งค่าแจ้งเตือนสำเร็จ");
+      await loadSettings();
+    } catch {
+      setNotifError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setNotifSaving(false);
     }
   }
 
@@ -278,6 +366,33 @@ export default function DashboardSettingsPage() {
 
           <Button onClick={handleSubmit} disabled={submitting}>
             {submitting ? "กำลังบันทึก..." : "บันทึกการตั้งค่า"}
+          </Button>
+
+          <Card>
+            <p className="font-medium text-text-primary">ช่องทางแจ้งเตือน (เปิด/ปิดทั้งระบบ)</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              การแจ้งเตือนในระบบ (in-app) ทำงานเสมอ — สวิตช์นี้ควบคุมช่องทางเสริม
+            </p>
+            <div className="mt-3 space-y-2">
+              {([
+                ["discord", discordEnabled, setDiscordEnabled],
+                ["welpru", welpruEnabled, setWelpruEnabled],
+                ["line", lineEnabled, setLineEnabled],
+              ] as const).map(([ch, val, setter]) => (
+                <label key={ch} className="flex items-center gap-2 text-sm text-text-primary">
+                  <input type="checkbox" checked={val} onChange={(e) => setter(e.target.checked)} />
+                  {CHANNEL_LABEL[ch as Channel]}
+                </label>
+              ))}
+            </div>
+          </Card>
+
+          {/* Task 5 จะเพิ่ม per-event Card ตรงนี้ */}
+
+          {notifError && <p className="text-sm text-danger-text">{notifError}</p>}
+          {notifSuccess && <p className="text-sm text-success-text">{notifSuccess}</p>}
+          <Button onClick={handleSaveNotif} disabled={notifSaving}>
+            {notifSaving ? "กำลังบันทึก..." : "บันทึกการตั้งค่าแจ้งเตือน"}
           </Button>
         </div>
       )}
