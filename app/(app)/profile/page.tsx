@@ -16,6 +16,7 @@ type Profile = {
   phone: string | null;
   staff_id: string | null;
   welpru_verified_at: string | null;
+  line_user_id: string | null;
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -53,6 +54,12 @@ export default function ProfilePage() {
   const [requestingVerify, setRequestingVerify] = useState(false);
   const [verifyMessage, setVerifyMessage] = useState<string | null>(null);
 
+  const [lineUserId, setLineUserId] = useState<string | null>(null);
+  const [lineOtp, setLineOtp] = useState<string | null>(null);
+  const [otpSecondsLeft, setOtpSecondsLeft] = useState(0);
+  const [generatingOtp, setGeneratingOtp] = useState(false);
+  const [lineMessage, setLineMessage] = useState<string | null>(null);
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -71,7 +78,7 @@ export default function ProfilePage() {
 
       const { data, error } = await supabase
         .from("users")
-        .select("full_name, email, role, department, phone, staff_id, welpru_verified_at")
+        .select("full_name, email, role, department, phone, staff_id, welpru_verified_at, line_user_id")
         .eq("id", user.id)
         .single();
 
@@ -83,10 +90,17 @@ export default function ProfilePage() {
 
       setProfile(data as Profile);
       setWelpruVerifiedAt((data as Profile).welpru_verified_at);
+      setLineUserId((data as Profile).line_user_id);
       setLoading(false);
     }
     load();
   }, []);
+
+  useEffect(() => {
+    if (otpSecondsLeft <= 0) return;
+    const timer = setInterval(() => setOtpSecondsLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, [otpSecondsLeft]);
 
   function startEditing() {
     if (!profile) return;
@@ -196,6 +210,55 @@ export default function ProfilePage() {
     }
 
     setVerifyMessage("ส่งแจ้งเตือนทดสอบไปยัง WeLPRU แล้ว กรุณาแตะลิงก์ในแอปเพื่อยืนยัน");
+  }
+
+  async function handleGenerateLineOtp() {
+    setGeneratingOtp(true);
+    setLineMessage(null);
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      setLineMessage("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setGeneratingOtp(false);
+      return;
+    }
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-line-otp`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: "{}",
+      }
+    );
+    setGeneratingOtp(false);
+    if (!response.ok) {
+      setLineMessage("สร้างรหัสไม่สำเร็จ กรุณาลองใหม่");
+      return;
+    }
+    const data = (await response.json()) as { otp: string; expiresInMinutes: number };
+    setLineOtp(data.otp);
+    setOtpSecondsLeft(data.expiresInMinutes * 60);
+  }
+
+  async function handleUnlinkLine() {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("users").update({ line_user_id: null }).eq("id", user.id);
+    if (error) {
+      setLineMessage("ยกเลิกการเชื่อมต่อไม่สำเร็จ กรุณาลองใหม่");
+      return;
+    }
+    setLineUserId(null);
+    setLineOtp(null);
+    setOtpSecondsLeft(0);
   }
 
   async function handleSignOut() {
@@ -357,9 +420,64 @@ export default function ProfilePage() {
 
           <Card className="mt-4">
             <p className="font-medium text-text-primary">เชื่อมต่อ LINE</p>
-            <p className="mt-1 text-sm text-text-secondary">
-              เร็วๆ นี้ — ระบบแจ้งเตือนผ่าน LINE อยู่ระหว่างการพัฒนา
-            </p>
+            {lineUserId ? (
+              <>
+                <p className="mt-1 text-sm text-success-text">
+                  ✅ เชื่อมต่อบัญชี LINE แล้ว
+                </p>
+                <p className="mt-1 text-sm text-text-secondary">
+                  ท่านจะได้รับ Flex Message พร้อมปุ่มอนุมัติเมื่อมีคำขอที่ต้องพิจารณา
+                </p>
+                <div className="mt-3">
+                  <Button variant="secondary" onClick={handleUnlinkLine}>
+                    ยกเลิกการเชื่อมต่อ
+                  </Button>
+                </div>
+              </>
+            ) : lineOtp && otpSecondsLeft > 0 ? (
+              <>
+                <p className="mt-1 text-sm text-text-secondary">
+                  1. เพิ่มเพื่อน LINE Official Account ของระบบ
+                  {process.env.NEXT_PUBLIC_LINE_OA_ID && (
+                    <>
+                      {" "}
+                      <a
+                        href={`https://line.me/R/ti/p/@${process.env.NEXT_PUBLIC_LINE_OA_ID}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-brand-primary hover:underline"
+                      >
+                        (เพิ่มเพื่อน)
+                      </a>
+                    </>
+                  )}
+                </p>
+                <p className="mt-1 text-sm text-text-secondary">
+                  2. พิมพ์ข้อความนี้ในแชท:
+                </p>
+                <p className="mt-1 text-lg font-semibold text-text-primary">
+                  /link {lineOtp}
+                </p>
+                <p className="mt-1 text-xs text-text-muted">
+                  รหัสหมดอายุใน {Math.floor(otpSecondsLeft / 60)}:
+                  {String(otpSecondsLeft % 60).padStart(2, "0")} นาที
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-text-secondary">
+                  เชื่อมบัญชี LINE เพื่อรับการแจ้งเตือนคำขออนุมัติพร้อมปุ่มกดอนุมัติในแชท
+                </p>
+                {lineMessage && (
+                  <p className="mt-2 text-sm text-text-secondary">{lineMessage}</p>
+                )}
+                <div className="mt-3">
+                  <Button onClick={handleGenerateLineOtp} disabled={generatingOtp}>
+                    {generatingOtp ? "กำลังสร้างรหัส..." : "เชื่อมต่อ LINE"}
+                  </Button>
+                </div>
+              </>
+            )}
           </Card>
 
           <Card className="mt-4">
