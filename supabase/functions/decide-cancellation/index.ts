@@ -5,6 +5,7 @@ import {
   decideCancellation,
   type CancellationDecision,
 } from "../_shared/processCancellation.ts";
+import { notifyCancellationDecision } from "../_shared/bookingNotify.ts";
 
 interface DecideCancellationBody {
   booking_id: string;
@@ -56,6 +57,8 @@ Deno.serve(
       role: profile.role,
       decision: body.decision,
     });
+
+    await notifyCancellationDecision(adminClient, body.booking_id, body.decision);
 
     return new Response(JSON.stringify(result), {
       status: 200,

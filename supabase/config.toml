@@ -450,3 +450,18 @@ verify_jwt = true
 
 [functions.complete-setup]
 verify_jwt = true
+
+[functions.request-welpru-verify]
+verify_jwt = true
+
+[functions.confirm-welpru-verify]
+verify_jwt = true
+
+[functions.line-webhook]
+verify_jwt = false
+
+[functions.generate-line-otp]
+verify_jwt = true
+
+[functions.update-notification-settings]
+verify_jwt = true

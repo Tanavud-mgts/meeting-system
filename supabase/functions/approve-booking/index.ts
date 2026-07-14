@@ -5,6 +5,7 @@ import {
   processApproval,
   type ApprovalAction,
 } from "../_shared/processApproval.ts";
+import { notifyApprovalOutcome } from "../_shared/bookingNotify.ts";
 
 interface ApproveBookingRequest {
   booking_id: string;
@@ -64,6 +65,8 @@ Deno.serve(
       action: body.action,
       note: body.note,
     });
+
+    await notifyApprovalOutcome(adminClient, body.booking_id, result, body.note);
 
     return new Response(JSON.stringify(result), {
       status: 200,

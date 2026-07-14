@@ -1,12 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { withErrorHandling } from "../_shared/handler.ts";
-import { UnauthorizedError } from "../_shared/errors.ts";
-import { requestCancellation } from "../_shared/processCancellation.ts";
-import { notifyCancellationRequested } from "../_shared/bookingNotify.ts";
+import { UnauthorizedError, ValidationError } from "../_shared/errors.ts";
+import { confirmWelpruVerify } from "../_shared/welpruVerify.ts";
 
-interface RequestCancellationBody {
-  booking_id: string;
-  reason: string;
+interface ConfirmWelpruVerifyBody {
+  token: string;
 }
 
 Deno.serve(
@@ -27,24 +25,19 @@ Deno.serve(
       throw new UnauthorizedError("ไม่พบข้อมูลผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่");
     }
 
-    const body: RequestCancellationBody = await req.json();
+    const body: ConfirmWelpruVerifyBody = await req.json();
+    if (!body.token || body.token.trim().length === 0) {
+      throw new ValidationError("ไม่พบ token ยืนยัน");
+    }
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const result = await requestCancellation(adminClient, {
-      bookingId: body.booking_id,
-      requesterId: user.id,
-      reason: body.reason,
-    });
+    await confirmWelpruVerify(adminClient, { userId: user.id, token: body.token });
 
-    if (result.newStatus === "cancel_requested") {
-      await notifyCancellationRequested(adminClient, body.booking_id, body.reason);
-    }
-
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

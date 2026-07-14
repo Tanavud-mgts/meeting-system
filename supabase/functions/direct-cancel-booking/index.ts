@@ -7,6 +7,7 @@ import {
   NotFoundError,
   ConflictError,
 } from "../_shared/errors.ts";
+import { notifyBookingCancelledByAdmin } from "../_shared/bookingNotify.ts";
 
 interface DirectCancelBookingBody {
   booking_id: string;
@@ -99,6 +100,8 @@ Deno.serve(
     if (booking.gcal_event_id) {
       triggerCalendarDelete(body.booking_id);
     }
+
+    await notifyBookingCancelledByAdmin(adminClient, body.booking_id, body.reason);
 
     return new Response(
       JSON.stringify({
