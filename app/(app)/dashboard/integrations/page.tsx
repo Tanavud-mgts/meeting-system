@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 type ServiceName =
   | "make_com"
   | "line"
+  | "welpru"
+  | "discord"
   | "google_calendar"
   | "vercel"
   | "internal";
@@ -31,6 +33,8 @@ type FailedLogRow = {
 const SERVICES: ServiceName[] = [
   "make_com",
   "line",
+  "welpru",
+  "discord",
   "google_calendar",
   "vercel",
   "internal",
@@ -39,6 +43,8 @@ const SERVICES: ServiceName[] = [
 const SERVICE_LABEL: Record<ServiceName, string> = {
   make_com: "Make.com",
   line: "LINE",
+  welpru: "WeLPRU",
+  discord: "Discord",
   google_calendar: "Google Calendar",
   vercel: "Vercel",
   internal: "ภายในระบบ",
