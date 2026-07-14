@@ -235,6 +235,7 @@ export async function notifyAndLog(
           service: "welpru",
           status: result.success ? "success" : "failed",
           payload: { failedCount: result.failedCount, recipientCount: staffIds.length },
+          error_detail: result.success ? undefined : result.detail,
         });
       } catch (err) {
         console.error("[notifyAndLog] welpru ล้มเหลว:", err);

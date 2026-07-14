@@ -24,53 +24,48 @@ export interface SendWelpruPushParams {
 export interface SendWelpruPushResult {
   success: boolean;
   failedCount: number;
+  detail?: string; // raw response / error เมื่อส่งไม่สำเร็จ (ops diagnosability)
 }
 
-// POST /api/notify/user รับ "user_ids" เป็น array (ส่ง bulk ในครั้งเดียว)
-// ★ ห้ามใช้ user_id เดี่ยว — API เป็น async ตอบ 202 ทันทีแม้ field ผิด แล้ว queued 0 (ไม่ส่งจริง)
+// POST /api/notify/user (API จริง) รับ "user_id" เอกพจน์ ต่อ 1 คำขอ
+// ★ เอกสารบางฉบับเขียน user_ids (array) แต่ API ที่ deploy จริงตอบ 400 ถ้าไม่ใช่ user_id
 export interface WelpruPushPayload {
-  user_ids: string[];
+  user_id: string;
   title: string;
   body: string;
   link?: string;
 }
 
-// ── Pure: ประกอบ payload ตามสเปก (title/body ตัดตามขีดจำกัด WeLPRU, link ยาวเกินตัดทิ้ง) ──
+// ── Pure: ประกอบ payload ต่อ 1 ผู้รับ (title/body ตัดตามขีดจำกัด, link ยาวเกินตัดทิ้ง) ──
 export function buildWelpruPayload(
-  staffIds: string[],
+  staffId: string,
   title: string,
   body: string,
   link?: string
 ): WelpruPushPayload {
   return {
-    user_ids: staffIds,
+    user_id: staffId,
     title: truncateText(title, 50),
     body: truncateText(body, 250),
     link: safeLink(link, 255),
   };
 }
 
-// ── Pure: แปลงจำนวน queued (จาก 202 response) เป็นผลลัพธ์ — queued 0 = API รับแต่ไม่ได้ส่งจริง ──
-export function interpretQueued(recipientCount: number, queued: number): SendWelpruPushResult {
-  const failedCount = Math.max(0, recipientCount - queued);
-  return { success: queued > 0, failedCount };
-}
-
-// ส่ง bulk ครั้งเดียว (API async → 202 Accepted {success, queued}) คืนจำนวน queued
-async function postWelpruPush(apiKey: string, payload: WelpruPushPayload): Promise<number> {
+// ส่ง 1 ผู้รับ — คืน raw response body (throw เมื่อไม่ใช่ 2xx พร้อมแนบ body เพื่อ diagnose)
+async function postWelpruPush(apiKey: string, payload: WelpruPushPayload): Promise<string> {
   const response = await fetch(`${WELPRU_API_URL}/notify/user`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
     body: JSON.stringify(payload),
   });
+  const raw = await response.text();
   if (!response.ok) {
-    throw new Error(`WeLPRU push failed: ${response.status}`);
+    throw new Error(`WeLPRU push failed: ${response.status} ${raw}`);
   }
-  const json = (await response.json().catch(() => ({}))) as { queued?: number };
-  // ถ้าอ่าน queued ไม่ได้ (API เปลี่ยน format) fallback มองว่ารับครบ (2xx = สำเร็จ) เพื่อไม่ปิดกั้นการส่ง
-  return typeof json.queued === "number" ? json.queued : payload.user_ids.length;
+  return raw;
 }
 
+// ส่งแยกทีละ user (API รับ user_id เดี่ยว) — partial success ถือว่าสำเร็จ
 export async function sendWelpruPush(
   params: SendWelpruPushParams
 ): Promise<SendWelpruPushResult> {
@@ -80,20 +75,28 @@ export async function sendWelpruPush(
 
   const apiKey = Deno.env.get("WELPRU_API_KEY");
   if (!apiKey) {
-    return { success: false, failedCount: params.staffIds.length };
+    return { success: false, failedCount: params.staffIds.length, detail: "WELPRU_API_KEY ไม่ได้ตั้งค่า" };
   }
 
-  const payload = buildWelpruPayload(
-    params.staffIds,
-    params.title,
-    params.body,
-    params.link
+  const results = await Promise.allSettled(
+    params.staffIds.map((staffId) =>
+      withRetry(() =>
+        postWelpruPush(apiKey, buildWelpruPayload(staffId, params.title, params.body, params.link))
+      )
+    )
   );
 
-  try {
-    const queued = await withRetry(() => postWelpruPush(apiKey, payload));
-    return interpretQueued(params.staffIds.length, queued);
-  } catch {
-    return { success: false, failedCount: params.staffIds.length };
-  }
+  const rejected = results.filter(
+    (r): r is PromiseRejectedResult => r.status === "rejected"
+  );
+  const okRaw = results.find(
+    (r): r is PromiseFulfilledResult<string> => r.status === "fulfilled"
+  )?.value;
+
+  const failedCount = rejected.length;
+  const success = failedCount < params.staffIds.length;
+  // แนบ diagnostic: error แรก (ถ้ามี fail) หรือ raw success response (เพื่อ ops เห็น queued/format จริง)
+  const detail = failedCount > 0 ? String(rejected[0].reason) : okRaw;
+
+  return { success, failedCount, detail };
 }
