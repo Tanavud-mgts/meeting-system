@@ -37,6 +37,7 @@ export default function DashboardSettingsPage() {
   const [discordEnabled, setDiscordEnabled] = useState(false);
   const [lineEnabled, setLineEnabled] = useState(false);
   const [notifState, setNotifState] = useState<Record<string, NotifEventState>>({});
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifError, setNotifError] = useState<string | null>(null);
   const [notifSuccess, setNotifSuccess] = useState<string | null>(null);
@@ -401,82 +402,110 @@ export default function DashboardSettingsPage() {
           <Card>
             <p className="font-medium text-text-primary">ตั้งค่ารายเหตุการณ์</p>
             <p className="mt-1 text-sm text-text-secondary">
-              เปิด/ปิดช่องทางและแก้ข้อความแต่ละเหตุการณ์ — เว้นว่างข้อความไว้เพื่อใช้ค่าเริ่มต้น
+              แตะชื่อเหตุการณ์เพื่อเปิด/ปิดช่องทางและแก้ข้อความ — เว้นว่างข้อความไว้เพื่อใช้ค่าเริ่มต้น
             </p>
-            <div className="mt-4 space-y-6">
+            <div className="mt-2">
               {EVENT_META.map((m) => {
                 const st = notifState[m.key];
                 if (!st) return null;
+                const isExpanded = expandedEvent === m.key;
+                const enabledChannels = m.channels.filter((ch) => !st.channelOff[ch]);
+                const hasCustomText = Boolean(st.title.trim() || st.body.trim());
                 const titleLen = st.title.trim().length;
                 const bodyLen = st.body.trim().length;
                 const previewTitle = applyTemplate(st.title.trim() || m.defaultTitle, PREVIEW_VARS);
                 const previewBody = applyTemplate(st.body.trim() || m.defaultBody, PREVIEW_VARS);
                 return (
-                  <div key={m.key} className="border-t border-neutral-100 pt-4 first:border-0 first:pt-0">
-                    <p className="text-sm font-medium text-text-primary">{m.label}</p>
-
-                    <div className="mt-2 flex flex-wrap gap-4">
-                      {m.channels.map((ch) => (
-                        <label key={ch} className="flex items-center gap-2 text-sm text-text-secondary">
-                          <input
-                            type="checkbox"
-                            checked={!st.channelOff[ch]}
-                            onChange={() => toggleChannel(m.key, ch)}
-                          />
-                          {CHANNEL_LABEL[ch]}
-                        </label>
-                      ))}
-                    </div>
-
-                    <div className="mt-3 space-y-2">
+                  <div key={m.key} className="border-t border-neutral-100 first:border-0">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedEvent(isExpanded ? null : m.key)}
+                      aria-expanded={isExpanded}
+                      className="flex w-full items-center justify-between gap-3 py-3 text-left"
+                    >
                       <div>
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs text-text-secondary">หัวข้อ</label>
-                          <span className={`text-xs ${titleLen > 200 ? "text-danger-text" : "text-text-muted"}`}>
-                            {titleLen}/200
-                          </span>
-                        </div>
-                        <input
-                          type="text"
-                          value={st.title}
-                          placeholder={m.defaultTitle}
-                          onChange={(e) => updateNotif(m.key, { title: e.target.value })}
-                          maxLength={200}
-                          className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
-                        />
+                        <p className="text-sm font-medium text-text-primary">{m.label}</p>
+                        <p className="mt-0.5 text-xs text-text-secondary">
+                          {enabledChannels.length > 0
+                            ? enabledChannels.map((ch) => CHANNEL_LABEL[ch]).join(" · ")
+                            : "ปิดทุกช่องทาง"}
+                          {hasCustomText && " · ข้อความกำหนดเอง"}
+                        </p>
                       </div>
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs text-text-secondary">เนื้อหา</label>
-                          <span className={`text-xs ${bodyLen > 1000 ? "text-danger-text" : "text-text-muted"}`}>
-                            {bodyLen}/1000
-                          </span>
-                        </div>
-                        <textarea
-                          value={st.body}
-                          placeholder={m.defaultBody}
-                          onChange={(e) => updateNotif(m.key, { body: e.target.value })}
-                          rows={2}
-                          maxLength={1000}
-                          className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
-                        />
-                      </div>
-                      {(st.title.trim() || st.body.trim()) && (
-                        <button
-                          type="button"
-                          onClick={() => updateNotif(m.key, { title: "", body: "" })}
-                          className="text-xs text-brand-primary hover:underline"
-                        >
-                          คืนค่าเริ่มต้น
-                        </button>
-                      )}
-                    </div>
+                      <span
+                        aria-hidden
+                        className={`shrink-0 text-text-muted transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      >
+                        ▾
+                      </span>
+                    </button>
 
-                    <div className="mt-2 rounded-sm bg-neutral-100 px-3 py-2">
-                      <p className="text-xs text-text-muted">ตัวอย่าง:</p>
-                      <p className="text-sm font-medium text-text-primary">{previewTitle}</p>
-                      <p className="text-sm text-text-secondary">{previewBody}</p>
-                    </div>
+                    {isExpanded && (
+                      <div className="pb-4">
+                        <div className="flex flex-wrap gap-4">
+                          {m.channels.map((ch) => (
+                            <label key={ch} className="flex items-center gap-2 text-sm text-text-secondary">
+                              <input
+                                type="checkbox"
+                                checked={!st.channelOff[ch]}
+                                onChange={() => toggleChannel(m.key, ch)}
+                              />
+                              {CHANNEL_LABEL[ch]}
+                            </label>
+                          ))}
+                        </div>
+
+                        <div className="mt-3 space-y-2">
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs text-text-secondary">หัวข้อ</label>
+                              <span className={`text-xs ${titleLen > 200 ? "text-danger-text" : "text-text-muted"}`}>
+                                {titleLen}/200
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              value={st.title}
+                              placeholder={m.defaultTitle}
+                              onChange={(e) => updateNotif(m.key, { title: e.target.value })}
+                              maxLength={200}
+                              className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs text-text-secondary">เนื้อหา</label>
+                              <span className={`text-xs ${bodyLen > 1000 ? "text-danger-text" : "text-text-muted"}`}>
+                                {bodyLen}/1000
+                              </span>
+                            </div>
+                            <textarea
+                              value={st.body}
+                              placeholder={m.defaultBody}
+                              onChange={(e) => updateNotif(m.key, { body: e.target.value })}
+                              rows={2}
+                              maxLength={1000}
+                              className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+                            />
+                          </div>
+                          {hasCustomText && (
+                            <button
+                              type="button"
+                              onClick={() => updateNotif(m.key, { title: "", body: "" })}
+                              className="text-xs text-brand-primary hover:underline"
+                            >
+                              คืนค่าเริ่มต้น
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="mt-2 rounded-sm bg-neutral-100 px-3 py-2">
+                          <p className="text-xs text-text-muted">ตัวอย่าง:</p>
+                          <p className="text-sm font-medium text-text-primary">{previewTitle}</p>
+                          <p className="text-sm text-text-secondary">{previewBody}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
