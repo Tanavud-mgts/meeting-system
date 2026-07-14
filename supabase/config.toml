@@ -454,8 +454,10 @@ verify_jwt = true
 [functions.request-welpru-verify]
 verify_jwt = true
 
+# verify_jwt=false: ยืนยันด้วย token (magic-link) จาก in-app browser ของ WeLPRU
+# ที่ไม่ได้ login เว็บ — token เป็นหลักฐานตัวตน (CSPRNG 24 ไบต์ ใช้ครั้งเดียว 10 นาที)
 [functions.confirm-welpru-verify]
-verify_jwt = true
+verify_jwt = false
 
 [functions.line-webhook]
 verify_jwt = false

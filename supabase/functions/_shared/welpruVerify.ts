@@ -51,7 +51,7 @@ export async function requestWelpruVerify(
   });
   if (insertError) throw insertError;
 
-  const link = `${params.siteUrl}/profile/welpru-verify?token=${token}`;
+  const link = `${params.siteUrl}/welpru-verify?token=${token}`;
   await sendPush({
     staffIds: [staffId],
     title: "ยืนยันการรับแจ้งเตือน",
@@ -63,35 +63,38 @@ export async function requestWelpruVerify(
 }
 
 export interface ConfirmWelpruVerifyParams {
-  userId: string;
   token: string;
 }
 
+// ยืนยันด้วย token อย่างเดียว (magic-link): token ถูกส่งไปเฉพาะแอป WeLPRU ของ
+// เจ้าของบัญชี → การครอบครอง token = พิสูจน์ตัวตน ไม่ต้องมี session login ทำให้
+// ลิงก์กดจาก in-app browser ของ WeLPRU (ที่ไม่ได้ login เว็บ) ใช้ได้ user_id มา
+// จากแถว token เอง (ไม่รับจากภายนอก) กัน race ด้วย atomic consume (Rule 6)
 export async function confirmWelpruVerify(
   client: SupabaseClient,
   params: ConfirmWelpruVerifyParams
 ): Promise<void> {
-  // Atomic: UPDATE พร้อม WHERE is_used=false (Critical Rule 6) — กัน race
   const { data: updated, error: updateError } = await client
     .from("welpru_link_tokens")
     .update({ is_used: true })
     .eq("token", params.token)
     .eq("is_used", false)
-    .eq("user_id", params.userId)
     .gt("expires_at", new Date().toISOString())
-    .select("staff_id");
+    .select("user_id, staff_id");
 
   if (updateError) throw updateError;
   if (!updated || (updated as unknown[]).length === 0) {
     throw new ConflictError("ลิงก์ยืนยันหมดอายุหรือถูกใช้ไปแล้ว กรุณาขอยืนยันใหม่");
   }
 
-  const tokenStaffId = (updated as { staff_id: string }[])[0].staff_id;
+  const { user_id: tokenUserId, staff_id: tokenStaffId } = (
+    updated as { user_id: string; staff_id: string }[]
+  )[0];
 
   const { data: userRow, error: userError } = await client
     .from("users")
     .select("staff_id")
-    .eq("id", params.userId)
+    .eq("id", tokenUserId)
     .single();
   if (userError || !userRow) {
     throw new ForbiddenError("ไม่พบข้อมูลผู้ใช้งาน");
@@ -107,11 +110,11 @@ export async function confirmWelpruVerify(
   const { error: verifyError } = await client
     .from("users")
     .update({ welpru_verified_at: new Date().toISOString() })
-    .eq("id", params.userId);
+    .eq("id", tokenUserId);
   if (verifyError) throw verifyError;
 
   const { error: consentError } = await client.from("consent_records").insert({
-    user_id: params.userId,
+    user_id: tokenUserId,
     consent_type: "welpru_linking",
   });
   if (consentError) throw consentError;
