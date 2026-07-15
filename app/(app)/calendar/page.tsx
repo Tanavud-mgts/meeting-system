@@ -413,10 +413,7 @@ export default function CalendarPage() {
   return (
     <div className="mx-auto max-w-5xl animate-fade-in-up p-6 pb-16">
       <div className="mb-4">
-        <div className="text-xs font-semibold uppercase tracking-[3px] text-brand-accent">
-          University Booking
-        </div>
-        <h1 className="mt-1 text-2xl font-bold text-text-primary">
+        <h1 className="text-2xl font-bold text-text-primary">
           ภาพรวมการจองห้องประชุม
         </h1>
       </div>
