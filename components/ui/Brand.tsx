@@ -1,12 +1,9 @@
-// Faculty logo + wordmark. Two assets, chosen by size:
-//   sm → /logo-fms-mark.svg  — simplified wheel mark, NO text ring (legible at
-//        30px in the sidebar; a detailed seal turns to mush that small).
-//   lg → /logo-fms.svg       — full crest placeholder; replace with the
-//        official artwork (drop public/logo-fms.png and switch this to it).
-// Plain <img> — repo does not use next/image.
-const IMG: Record<"sm" | "lg", { src: string; px: number; cls: string }> = {
-  sm: { src: "/logo-fms-mark.svg", px: 30, cls: "h-[30px] w-[30px]" },
-  lg: { src: "/logo-fms.svg", px: 64, cls: "h-16 w-16" },
+// Faculty logo + wordmark. Uses the official vector logo (public/logo-fms.svg)
+// at both sizes — SVG scales cleanly, no rasterizing. Plain <img> — repo does
+// not use next/image.
+const IMG: Record<"sm" | "lg", { px: number; cls: string }> = {
+  sm: { px: 30, cls: "h-[30px] w-[30px]" },
+  lg: { px: 64, cls: "h-16 w-16" },
 };
 
 export function Brand({
@@ -25,7 +22,7 @@ export function Brand({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={IMG[size].src}
+        src="/logo-fms.svg"
         alt="ตราคณะวิทยาการจัดการ"
         width={IMG[size].px}
         height={IMG[size].px}
