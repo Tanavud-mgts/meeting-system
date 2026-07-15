@@ -1,64 +1,81 @@
 # Design Tokens — ระบบจองห้องประชุม
 
-เอกสารสรุป design token (สี · spacing · typography) ที่สกัดจากทั้ง 3 หน้า: หน้าจอง, ภาพรวมปฏิทิน และคำขออนุมัติ
-ไฟล์ที่เกี่ยวข้อง: `tokens/design-tokens.json` (W3C DTCG) · `tokens/tokens.css` (CSS variables) · `Design Tokens.dc.html` (หน้าแสดงผล)
+เอกสารสรุป design token (สี · spacing · typography) โทนใหม่: **ม่วงไวโอเลต × เทอร์คอย × เขียว บนพื้น lavender** สกัดจากหน้า Claude Design ชุดใหม่ (จองห้องประชุม + คำขอรออนุมัติ)
+ไฟล์ที่เกี่ยวข้อง: `tokens/design-tokens.json` (W3C DTCG) · `tokens/tokens.css` (CSS variables) · `app/globals.css` (Tailwind `@theme` mapping + gradient utilities)
 
-ฟอนต์หลัก: **Sarabun** (รองรับภาษาไทย) · โทนหลัก เขียว-เทอร์คอยสดใสแบบ SaaS สมัยใหม่
+ฟอนต์หลัก: **Sarabun** (รองรับภาษาไทย, weight 300–800) · บุคลิก: สดใส มีมิติ ใช้ gradient และเงาโทนม่วง
 
 ---
 
 ## 1. สี (Color)
 
-### Brand
-| Token | CSS variable | HEX | การใช้งาน |
+### Brand & Gradient
+| Token | CSS variable | ค่า | การใช้งาน |
 |---|---|---|---|
-| brand.primary | `--color-brand-primary` | `#0d8a5f` | ปุ่มหลัก · แถบ active · ไฮไลต์ |
-| brand.primary-strong | `--color-brand-primary-strong` | `#0a6b48` | พื้นหลังเข้ม · แถบสรุปห้องที่เลือก |
-| brand.accent | `--color-brand-accent` | `#2a8a86` | eyebrow · ลิงก์ · ข้อความเน้น |
-| brand.gradient | `--gradient-brand` | `linear-gradient(135deg, #0d8a5f, #10b981)` | ปุ่ม/ไฮไลต์พิเศษ |
+| brand.primary | `--color-brand-primary` | `#7c3aed` | สีหลัก · แถบ accent · ลิงก์เน้น · focus ring |
+| brand.primary-strong | `--color-brand-primary-strong` | `#5b21b6` | ข้อความเน้นบนพื้นม่วงจาง |
+| brand.deep | `--color-brand-deep` | `#4c1d95` | ม่วงลึก จุดเริ่ม gradient hero |
+| brand.accent | `--color-brand-accent` | `#0891b2` | เทอร์คอย · ตัวเลขเน้น · ปลาย gradient |
+| gradient.brand | `--gradient-brand` / class `.bg-grad-brand` | `linear-gradient(120deg,#7c3aed,#0891b2)` | ปุ่มหลัก · chip active · เมนู active |
+| gradient.hero | `--gradient-hero` / class `.bg-grad-hero` | `linear-gradient(120deg,#4c1d95 0%,#7c3aed 38%,#0891b2 75%,#059669 100%)` | แบนเนอร์หัวหน้า (PageHero) |
+| gradient.success | `--gradient-success` / class `.bg-grad-success` | `linear-gradient(120deg,#059669,#0891b2)` | ปุ่มอนุมัติ/ยืนยัน |
+| gradient.danger | `--gradient-danger` / class `.bg-grad-danger` | `linear-gradient(120deg,#dc2626,#f59e0b)` | ปุ่มยืนยันการปฏิเสธ |
+| gradient.page | `--gradient-page` / class `.bg-page-wash` | radial อุ่น+มิ้นต์ บน `#f2effa` | พื้นหลัง `<main>` |
 
-### Neutral scale
+### Neutral scale (lavender-tinted)
 | Token | CSS variable | HEX |
 |---|---|---|
 | neutral.0 | `--color-neutral-0` | `#ffffff` |
-| neutral.50 | `--color-neutral-50` | `#f6f9f9` |
-| neutral.100 | `--color-neutral-100` | `#eef2f2` |
-| neutral.150 | `--color-neutral-150` | `#e6eeee` |
-| neutral.200 | `--color-neutral-200` | `#e0e8e8` |
-| neutral.300 | `--color-neutral-300` | `#d3dede` |
-| neutral.400 | `--color-neutral-400` | `#b6c2c2` |
-| neutral.500 | `--color-neutral-500` | `#8a989a` |
-| neutral.600 | `--color-neutral-600` | `#5c6b6d` |
-| neutral.700 | `--color-neutral-700` | `#33474a` |
-| neutral.900 | `--color-neutral-900` | `#1b2b2d` |
+| neutral.50 | `--color-neutral-50` | `#faf8ff` |
+| neutral.100 | `--color-neutral-100` | `#f5f1fc` |
+| neutral.150 | `--color-neutral-150` | `#f1eafb` |
+| neutral.200 | `--color-neutral-200` | `#eee5fb` |
+| neutral.300 | `--color-neutral-300` | `#e6ddfa` |
+| neutral.400 | `--color-neutral-400` | `#c3b8dd` |
+| neutral.500 | `--color-neutral-500` | `#8a80a3` |
+| neutral.600 | `--color-neutral-600` | `#6b6480` |
+| neutral.700 | `--color-neutral-700` | `#4a3f66` |
+| neutral.900 | `--color-neutral-900` | `#20182f` |
 
 ### Surface & Text
 | Token | CSS variable | ค่า | การใช้งาน |
 |---|---|---|---|
-| surface.page | `--color-surface-page` | `#eef2f2` (neutral.100) | พื้นหลังหน้า |
-| surface.card | `--color-surface-card` | `#ffffff` (neutral.0) | พื้นการ์ด |
-| surface.sunken | `--color-surface-sunken` | `#f7fafa` | กล่องย่อยในการ์ด (approval chain) |
-| surface.field | `--color-surface-field` | `#fbfdfd` | พื้นช่องกรอก / ดรอปดาวน์ |
-| text.primary | `--color-text-primary` | `#1b2b2d` | ข้อความหลัก |
-| text.secondary | `--color-text-secondary` | `#5c6b6d` | ข้อความรอง |
-| text.muted | `--color-text-muted` | `#8a989a` | label จาง |
-| text.on-primary | `--color-text-on-primary` | `#ffffff` | ข้อความบนพื้น brand |
+| surface.page | `--color-surface-page` | `#f2effa` | พื้นหลังหน้า (ใช้ผ่าน `.bg-page-wash`) |
+| surface.card | `--color-surface-card` | `#ffffff` | พื้นการ์ด |
+| surface.sunken | `--color-surface-sunken` | `#faf7ff` | กล่องย่อยในการ์ด (approval chain) — ขอบใช้ `--color-border-sunken` `#ecdcff` |
+| surface.field | `--color-surface-field` | `#faf8ff` | พื้นช่องกรอก / ดรอปดาวน์ (ตั้งอัตโนมัติใน globals.css) |
+| text.primary | `--color-text-primary` | `#20182f` | ข้อความหลัก |
+| text.secondary | `--color-text-secondary` | `#6b6480` | ข้อความรอง |
+| text.muted | `--color-text-muted` | `#8a80a3` | label จาง |
+| text.on-primary | `--color-text-on-primary` | `#ffffff` | ข้อความบนพื้น brand/gradient |
+| text.on-hero-muted | `--color-text-on-hero-muted` | `#e9d9ff` | subtitle บน hero gradient |
+| text.on-hero-gold | `--color-text-on-hero-gold` | `#fde68a` | ตัวเลข/คำเน้นบน hero gradient |
 
 ### Status (สีสถานะ — ต้องดูออกทันที)
 | กลุ่ม | Token | CSS variable | HEX | การใช้งาน |
 |---|---|---|---|---|
-| **success / อนุมัติแล้ว** | success.solid | `--color-success-solid` | `#1f9d57` | ปุ่มอนุมัติ |
-| | success.accent | `--color-success-accent` | `#3f9e74` | ขอบ / จุดสถานะ |
-| | success.surface | `--color-success-surface` | `#e4f3ea` | พื้น badge |
-| | success.text | `--color-success-text` | `#1c6b4c` | ข้อความบน surface |
-| **warning / รออนุมัติ** | warning.accent | `--color-warning-accent` | `#d9a93c` | รอดำเนินการ |
-| | warning.surface | `--color-warning-surface` | `#fbf1da` | พื้น badge |
-| | warning.text | `--color-warning-text` | `#876217` | ข้อความบน surface |
-| | warning.border | `--color-warning-border` | `#f0d27a` | ขอบเตือนการ์ดที่รอนานเกินกำหนด |
-| **danger / ปฏิเสธ** | danger.solid | `--color-danger-solid` | `#d24b3e` | ปุ่มยืนยันปฏิเสธ |
-| | danger.surface | `--color-danger-surface` | `#fdecea` | พื้นปุ่มปฏิเสธ |
-| | danger.text | `--color-danger-text` | `#c43d2f` | ข้อความ / label |
-| | danger.border | `--color-danger-border` | `#f1c4bd` | ขอบ |
+| **success / อนุมัติแล้ว** | success.solid | `--color-success-solid` | `#059669` | แถบ accent · จุดเริ่ม gradient success |
+| | success.accent | `--color-success-accent` | `#10b981` | ขอบ / จุดสถานะ |
+| | success.surface | `--color-success-surface` | `#d7f7e6` | พื้น badge |
+| | success.text | `--color-success-text` | `#047857` | ข้อความบน surface |
+| **warning / รออนุมัติ** | warning.accent | `--color-warning-accent` | `#f59e0b` | รอดำเนินการ · ขอบการ์ด urgent |
+| | warning.surface | `--color-warning-surface` | `#fff1e6` | พื้น badge · ปุ่มปฏิเสธ (soft) |
+| | warning.text | `--color-warning-text` | `#c2410c` | ข้อความบน surface |
+| | warning.border | `--color-warning-border` | `#fbd9b8` | ขอบเตือน/ขอบปุ่มปฏิเสธ |
+| **danger / ปฏิเสธ** | danger.solid | `--color-danger-solid` | `#dc2626` | สถานะปฏิเสธ · จุดเริ่ม gradient danger |
+| | danger.surface | `--color-danger-surface` | `#fde8e8` | พื้น badge |
+| | danger.text | `--color-danger-text` | `#dc2626` | ข้อความ / label |
+| | danger.border | `--color-danger-border` | `#f3c1bb` | ขอบ |
+
+### Accent เสริม + Tag อุปกรณ์
+| Token | CSS variable | ค่า | การใช้งาน |
+|---|---|---|---|
+| accent.pink | `--color-accent-pink` | `#db2777` | สีประจำห้อง (ลำดับ 5) |
+| tag.blue | `--color-tag-blue-surface` / `-text` | `#e8f0fb` / `#2054a8` | chip โปรเจกเตอร์ |
+| tag.orange | `--color-tag-orange-surface` / `-text` | `#fdeee0` / `#b5652f` | chip ไวท์บอร์ด |
+| tag.pink | `--color-tag-pink-surface` / `-text` | `#fce7f3` / `#a3175e` | chip ไมโครโฟน |
+
+สีประจำห้อง (การ์ดผลค้นหา `/booking`) วนตามลำดับ: brand-primary → brand-accent → success-solid → warning-accent → accent-pink → brand-deep (ใช้กับแถบบนการ์ด 5px + ปุ่ม "เลือกห้องนี้")
 
 ---
 
@@ -79,18 +96,20 @@ Scale ฐาน 4px — ใช้กับ padding, gap, margin
 ### Radius
 | Token | CSS variable | ค่า | การใช้งาน |
 |---|---|---|---|
-| radius.sm | `--radius-sm` | `8px` | ปุ่มเล็ก · input |
-| radius.md | `--radius-md` | `10px` | ปุ่ม · กล่องย่อย |
-| radius.lg | `--radius-lg` | `14px` | การ์ด |
-| radius.xl | `--radius-xl` | `16px` | dialog · การ์ดใหญ่ |
+| radius.sm | `--radius-sm` | `9px` | ปุ่ม · input |
+| radius.md | `--radius-md` | `12px` | กล่องย่อย |
+| radius.lg | `--radius-lg` | `16px` | การ์ด · dialog |
+| radius.xl | `--radius-xl` | `20px` | การ์ดใหญ่ |
 | radius.pill | `--radius-pill` | `999px` | badge · chip |
 
-### Shadow
+### Shadow (เงาโทนม่วงตาม brand)
 | Token | CSS variable | ค่า |
 |---|---|---|
-| shadow.card | `--shadow-card` | `0 3px 14px rgba(20,60,64,.05)` |
-| shadow.raised | `--shadow-raised` | `0 8px 24px rgba(13,138,95,.16)` |
+| shadow.card | `--shadow-card` | `0 8px 22px rgba(76,29,149,.08)` |
+| shadow.raised | `--shadow-raised` | `0 16px 40px rgba(76,29,149,.14)` |
 | shadow.modal | `--shadow-modal` | `0 20px 50px rgba(0,0,0,.25)` |
+| shadow.brand | `--shadow-brand` | `0 6px 16px rgba(124,58,237,.3)` — ปุ่ม/chip gradient ม่วง |
+| shadow.success | `--shadow-success` | `0 8px 20px rgba(5,150,105,.32)` — ปุ่มอนุมัติ |
 
 ---
 
@@ -108,6 +127,7 @@ Scale ฐาน 4px — ใช้กับ padding, gap, margin
 | medium | `--font-weight-medium` | `500` |
 | semibold | `--font-weight-semibold` | `600` |
 | bold | `--font-weight-bold` | `700` |
+| extrabold | `--font-weight-extrabold` | `800` — หัวเรื่องหน้า/ปุ่มเน้น |
 
 **Font size**
 | Token | CSS variable | ค่า | การใช้งาน |
@@ -118,146 +138,88 @@ Scale ฐาน 4px — ใช้กับ padding, gap, margin
 | size.md | `--font-size-md` | `15px` | ข้อความเน้น |
 | size.lg | `--font-size-lg` | `17px` | หัวข้อ section |
 | size.xl | `--font-size-xl` | `20px` | หัวข้อ dialog |
-| size.2xl | `--font-size-2xl` | `25px` | หัวเรื่องหน้า |
-
----
-
-## การใช้งาน
-
-```html
-<link rel="stylesheet" href="tokens/tokens.css">
-```
-```css
-.card {
-  background: var(--color-surface-card);
-  border: 1px solid var(--color-neutral-200);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-4);
-  font-family: var(--font-family-base);
-  color: var(--color-text-primary);
-}
-.btn-approve { background: var(--color-success-solid); color: var(--color-text-on-primary); }
-.btn-reject  { background: var(--color-danger-surface); color: var(--color-danger-text); }
-```
+| size.2xl | `--font-size-2xl` | `25px` | หัวเรื่องรอง |
+| size.3xl | `--font-size-3xl` | `28px` | หัวเรื่องหน้าใน hero (`text-3xl font-extrabold`) |
 
 ---
 
 ## 4. Component Patterns
 
+### PageHero (แบนเนอร์หัวหน้า) — บังคับใช้ทุกหน้า
+ทุกหน้าใน `(app)` ใช้ `<PageHero>` จาก `components/ui/PageHero.tsx` แทน `<h1>` ธรรมดา
+แล้วตามด้วย container ที่ดึงการ์ดแรกขึ้นซ้อนแบนเนอร์:
+
+```tsx
+<div className="animate-fade-in-up pb-10">
+  <PageHero title="ชื่อหน้า" subtitle="คำอธิบายสั้น" width="max-w-2xl" />
+  <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+    {/* เนื้อหา — width ต้องตรงกับ prop ของ PageHero */}
+  </div>
+</div>
+```
+
+- แบนเนอร์: `.bg-grad-hero` + overlay `.hero-glow`
+- หัวเรื่อง: `text-3xl font-extrabold` สีขาว · subtitle: `text-text-on-hero-muted`
+- ตัวเลขเน้นใน subtitle: `text-text-on-hero-gold`
+
+### SectionTitle (หัวข้อ section ในการ์ด)
+```tsx
+<SectionTitle>ค้นหาห้องว่าง</SectionTitle>
+// = h2.text-lg.font-extrabold + <span className="section-bar" /> (แท่ง gradient 8×20px)
+```
+
 ### Card (การ์ดมาตรฐาน)
-```css
-.card {
-  background:    var(--color-surface-card);
-  border:        1px solid var(--color-neutral-200);
-  border-radius: var(--radius-lg);          /* 14px */
-  box-shadow:    var(--shadow-card);
-  padding:       var(--space-5);             /* 20px */
-}
-/* hover */
-.card:hover { box-shadow: var(--shadow-raised); }
+```tsx
+<Card>...</Card>                    // ขอบ #eee5fb, radius 16, เงาม่วงจาง
+<Card accent="brand">...</Card>     // แถบ accent บน 5px (brand|warning|success|danger)
+<Card className="border-l-4 border-l-brand-primary">  // แถบ accent ซ้าย (รายการคิว)
 ```
+- การ์ด urgent (รอนานเกิน 2 ชม.): `border-warning-border border-l-warning-accent`
 
-### Card — Warning border (รอนานเกิน 2 ชม. ใน Approver Queue)
-```css
-.card-urgent {
-  border-color: var(--color-warning-border);
-  border-width: 1.5px;
-}
-```
-
-### Button
-```css
-/* Primary (อนุมัติ / ยืนยัน) */
-.btn-primary {
-  background: var(--color-brand-primary);
-  color:      var(--color-text-on-primary);
-  border-radius: var(--radius-sm);          /* 8px */
-  padding: var(--space-2) var(--space-4);   /* 8px 16px */
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-sm);
-}
-.btn-primary:hover { background: var(--color-brand-primary-strong); }
-
-/* Approve (ปุ่มอนุมัติ — เขียว) */
-.btn-approve {
-  background: var(--color-success-solid);
-  color:      var(--color-text-on-primary);
-}
-
-/* Reject (ปุ่มปฏิเสธ — แดงอ่อน) */
-.btn-reject {
-  background: var(--color-danger-surface);
-  color:      var(--color-danger-text);
-  border:     1px solid var(--color-danger-border);
-}
-.btn-reject:hover { background: var(--color-danger-solid); color: var(--color-text-on-primary); }
-
-/* Ghost (secondary) */
-.btn-ghost {
-  background: transparent;
-  color:      var(--color-text-secondary);
-  border:     1px solid var(--color-neutral-300);
-}
-.btn-ghost:hover { background: var(--color-neutral-100); }
-```
+### Button (`components/ui/Button.tsx`)
+| variant | ลักษณะ | ใช้กับ |
+|---|---|---|
+| `primary` | gradient ม่วง→เทอร์คอย + `shadow-brand` | ปุ่มหลักทั่วไป |
+| `success` | gradient เขียว→เทอร์คอย + `shadow-success` | อนุมัติ / ยืนยันการจอง |
+| `secondary` | ขาว ขอบ `neutral-300` (1.5px) | ยกเลิก / ปุ่มรอง |
+| `danger` | พื้น `warning-surface` ตัวอักษร `warning-text` ขอบ `warning-border` | ปฏิเสธ (soft) |
+| `dangerSolid` | gradient แดง→ส้ม | ยืนยันการปฏิเสธใน dialog |
 
 ### Badge / Status Chip
 ```css
-/* รูปแบบ pill เสมอ */
-.badge {
-  border-radius: var(--radius-pill);
-  padding:       2px 10px;
-  font-size:     var(--font-size-xs);       /* 11px */
-  font-weight:   var(--font-weight-semibold);
-}
+/* รูปแบบ pill เสมอ — font-weight: bold */
 .badge-success  { background: var(--color-success-surface); color: var(--color-success-text); }
 .badge-warning  { background: var(--color-warning-surface); color: var(--color-warning-text); }
 .badge-danger   { background: var(--color-danger-surface);  color: var(--color-danger-text);  }
 .badge-neutral  { background: var(--color-neutral-150);     color: var(--color-text-secondary); }
 ```
 
+### Filter chips (แถวกรองสถานะ)
+- active: `.bg-grad-brand` ตัวอักษรขาว `font-bold` + `shadow-brand`
+- inactive: พื้นขาว ขอบ `neutral-300` ตัวอักษร `neutral-700`
+- ตัวนับใน chip: pill เล็ก `bg-neutral-150 text-brand-primary-strong` (active: `bg-white/20 text-white`)
+
 ### Approval Chain Step Indicator
-```css
-/* แสดงความคืบหน้าของ chain: Admin ✅ → Approver1 ✅ → Approver2 ⏳ */
-.step-done   { color: var(--color-success-text);   }  /* ✅ */
-.step-active { color: var(--color-warning-text);   }  /* ⏳ รอดำเนินการ */
-.step-idle   { color: var(--color-text-muted);     }  /* — ยังไม่ถึง */
-```
+- กล่อง: `bg-surface-sunken` ขอบ `border-sunken` radius 12
+- step done: วงกลม `.bg-grad-brand` ✓ ขาว · เส้นเชื่อม `brand-primary`
+- step current: พื้น `warning-surface` ขอบ/ตัวอักษร `warning-text`
+- step wait: ขาว ขอบ `neutral-300` ตัวอักษร `neutral-400`
 
 ### Form Field
-```css
-.field {
-  background:    var(--color-surface-field);
-  border:        1px solid var(--color-neutral-300);
-  border-radius: var(--radius-sm);
-  padding:       var(--space-2) var(--space-3);    /* 8px 12px */
-  font-size:     var(--font-size-base);            /* 14.5px */
-  color:         var(--color-text-primary);
-  font-family:   var(--font-family-base);
-  width:         100%;
-}
-.field:focus {
-  border-color: var(--color-brand-primary);
-  outline:      none;
-  box-shadow:   0 0 0 3px rgba(21,114,125,.12);
-}
-```
+- พื้น `surface-field` ตั้งอัตโนมัติผ่าน globals.css (input/select/textarea)
+- ขอบ `neutral-300` (1.5px) radius 9px
+- focus: `outline 2px solid brand-primary` (ตั้งอัตโนมัติ)
 
 ### Dialog / Modal
-```css
-.dialog-overlay {
-  background: rgba(0,0,0,.45);
-  backdrop-filter: blur(2px);
-}
-.dialog {
-  background:    var(--color-surface-card);
-  border-radius: var(--radius-xl);            /* 16px */
-  box-shadow:    var(--shadow-modal);
-  padding:       var(--space-6);              /* 24px */
-  max-width:     480px;
-  width:         100%;
-}
+- overlay: `rgba(18,40,42,.5)` + `backdrop-blur`
+- กล่อง: radius 16 + `shadow-modal`
+- dialog ยืนยัน: ไอคอนวงกลม gradient (✓ = `.bg-grad-success`, ✕ = `.bg-grad-danger`) + หัวข้อ `font-extrabold` กึ่งกลาง
+
+### Empty state
+```html
+<div class="rounded-lg border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
+  ไม่มีรายการในหมวดนี้
+</div>
 ```
 
 ### AsyncBoundary — Loading Skeleton
@@ -267,11 +229,6 @@ Scale ฐาน 4px — ใช้กับ padding, gap, margin
   border-radius: var(--radius-sm);
   animation: shimmer 1.4s infinite;
 }
-@keyframes shimmer {
-  0%   { opacity: 1; }
-  50%  { opacity: .45; }
-  100% { opacity: 1; }
-}
 ```
 
 ---
@@ -280,153 +237,71 @@ Scale ฐาน 4px — ใช้กับ padding, gap, margin
 
 breakpoint เดียวที่สำคัญคือ `768px` (md ของ Tailwind)
 
-```css
-/* Mobile-first — เขียน mobile ก่อน override ด้วย md: prefix */
-
-/* Navigation */
-/* Desktop ≥ 768px → Top Navigation Bar */
-/* Mobile < 768px  → Bottom Navigation Bar (ความสูง 64px) */
-.nav-bottom { height: 64px; padding-bottom: env(safe-area-inset-bottom); }
-
-/* Sidebar (Admin Dashboard) */
-/* Desktop → sidebar ซ้ายมือกว้าง 200px */
-/* Mobile  → ซ่อน เปิดด้วย hamburger เป็น drawer เต็มจอ */
-
-/* Layout Grid */
-/* Stat card: mobile 2 คอลัมน์ → desktop 4 คอลัมน์ */
-.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
-@media (min-width: 768px) {
-  .stat-grid { grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
-}
-
-/* Table → Card list บนมือถือ */
-/* ซ่อน column รองด้วย hidden md:table-cell */
-
-/* Calendar */
-/* Mobile  → เริ่มที่ Day / Agenda view */
-/* Desktop → Month grid */
-
-/* ขนาดปุ่ม action บน mobile — ต้องแตะได้ง่าย */
-.btn { min-height: 44px; }
-```
+- Desktop ≥ 768px → Sidebar ซ้าย 200px (เมนู active = pill gradient ม่วง)
+- Mobile < 768px → Bottom Navigation Bar 64px (active = `text-brand-primary font-bold`)
+- Stat card: mobile 2 คอลัมน์ → desktop 4 คอลัมน์
+- Table → Card list บนมือถือ (ซ่อน column รองด้วย `hidden md:table-cell`)
+- ปุ่ม action บน mobile ≥ 44px
 
 ---
 
-## 6. Page References (จาก Claude Design)
-
-หน้าที่ออกแบบ high-fidelity แล้ว — ใช้เป็น visual reference ตอนเขียน component
+## 6. Page References (จาก Claude Design ชุดใหม่)
 
 | หน้า | Route | สิ่งที่โดดเด่น |
 |---|---|---|
-| จองห้องประชุม | `/booking` | 2-step flow: ค้นหาห้องว่าง → กรอกรายละเอียด, Progress indicator, ห้องไม่ว่าง disabled จาง |
-| ภาพรวมปฏิทิน | `/calendar` | FullCalendar 3 มุมมอง (วัน/สัปดาห์/เดือน), filter dropdown ตามห้อง, popup รายละเอียดเมื่อคลิก |
-| คำขออนุมัติ | `/approver` | Card list พร้อม urgent border เหลือง, Step indicator ของ chain, Dialog confirm ก่อน action |
+| จองห้องประชุม | `/booking` | Hero gradient + การ์ดค้นหาซ้อนแบนเนอร์, ปุ่มยืนยัน gradient เขียว, การ์ดสำเร็จมี ✓ วงกลม gradient |
+| คำขออนุมัติ | `/approver` | การ์ดคิวมีแถบซ้าย (urgent = เหลืองอำพัน), ป้าย "รอมาแล้ว X", dialog ยืนยันมีไอคอน gradient |
+| ภาพรวมปฏิทิน | `/calendar` | Hero + toolbar การ์ดขาว, ปุ่มสลับมุมมอง active = gradient |
 
 ---
 
-## 7. Tailwind Config สำหรับ Design Tokens
+## 7. การใช้งานผ่าน Tailwind (v4 — mapping อยู่ใน `app/globals.css` แล้ว)
 
-เพิ่มใน `tailwind.config.ts` เพื่อให้ใช้ CSS variable ผ่าน Tailwind utility class ได้:
+token ทั้งหมด map เป็น utility class ผ่าน `@theme inline` — **ห้าม hardcode สี/spacing/font ตรงๆ ในโค้ด**
 
-```typescript
-// tailwind.config.ts
-import type { Config } from 'tailwindcss'
-
-const config: Config = {
-  content: ['./src/**/*.{ts,tsx}'],
-  theme: {
-    extend: {
-      colors: {
-        brand: {
-          primary:        'var(--color-brand-primary)',
-          'primary-strong':'var(--color-brand-primary-strong)',
-          accent:         'var(--color-brand-accent)',
-        },
-        surface: {
-          page:    'var(--color-surface-page)',
-          card:    'var(--color-surface-card)',
-          sunken:  'var(--color-surface-sunken)',
-          field:   'var(--color-surface-field)',
-        },
-        text: {
-          primary:    'var(--color-text-primary)',
-          secondary:  'var(--color-text-secondary)',
-          muted:      'var(--color-text-muted)',
-          'on-primary': 'var(--color-text-on-primary)',
-        },
-        success: {
-          solid:   'var(--color-success-solid)',
-          accent:  'var(--color-success-accent)',
-          surface: 'var(--color-success-surface)',
-          text:    'var(--color-success-text)',
-        },
-        warning: {
-          accent:  'var(--color-warning-accent)',
-          surface: 'var(--color-warning-surface)',
-          text:    'var(--color-warning-text)',
-          border:  'var(--color-warning-border)',
-        },
-        danger: {
-          solid:   'var(--color-danger-solid)',
-          surface: 'var(--color-danger-surface)',
-          text:    'var(--color-danger-text)',
-          border:  'var(--color-danger-border)',
-        },
-      },
-      borderRadius: {
-        sm:   'var(--radius-sm)',   // 8px
-        md:   'var(--radius-md)',   // 10px
-        lg:   'var(--radius-lg)',   // 14px
-        xl:   'var(--radius-xl)',   // 16px
-        pill: 'var(--radius-pill)', // 999px
-      },
-      fontFamily: {
-        sans: ['Sarabun', 'system-ui', 'sans-serif'],
-        mono: ['ui-monospace', 'Menlo', 'monospace'],
-      },
-      fontSize: {
-        xs:   ['11px', { lineHeight: '1.4' }],
-        sm:   ['13px', { lineHeight: '1.5' }],
-        base: ['14.5px', { lineHeight: '1.6' }],
-        md:   ['15px',   { lineHeight: '1.6' }],
-        lg:   ['17px',   { lineHeight: '1.5' }],
-        xl:   ['20px',   { lineHeight: '1.4' }],
-        '2xl':['25px',   { lineHeight: '1.3' }],
-      },
-      boxShadow: {
-        card:   'var(--shadow-card)',
-        raised: 'var(--shadow-raised)',
-        modal:  'var(--shadow-modal)',
-      },
-      spacing: {
-        '1': '4px',
-        '2': '8px',
-        '3': '12px',
-        '4': '16px',
-        '5': '20px',
-        '6': '24px',
-        '8': '32px',
-      },
-    },
-  },
-}
-export default config
-```
-
-ตัวอย่างการใช้ผ่าน Tailwind:
 ```tsx
 // ปุ่มอนุมัติ
-<button className="bg-success-solid text-text-on-primary rounded-sm px-4 py-2 text-sm font-medium">
-  อนุมัติ
-</button>
+<Button variant="success">อนุมัติ</Button>
 
-// การ์ดมาตรฐาน
-<div className="bg-surface-card border border-neutral-200 rounded-lg shadow-card p-5">
-  ...
-</div>
+// การ์ดมาตรฐาน + แถบ accent บน
+<Card accent="brand">...</Card>
 
 // Badge รอการอนุมัติ
-<span className="bg-warning-surface text-warning-text rounded-pill px-2.5 py-0.5 text-xs font-semibold">
-  รออนุมัติ
-</span>
+<Badge tone="warning">รออนุมัติ</Badge>
+
+// gradient utilities (กำหนดใน globals.css)
+<div className="bg-grad-hero" />   // แบนเนอร์
+<div className="bg-grad-brand" />  // ปุ่ม/chip/เมนู active
+<span className="section-bar" />   // แท่งหน้าหัวข้อ section
 ```
+
+---
+
+## 8. Editorial Patterns (นำร่องหน้า /approver — 2026-07-15)
+
+ทิศทางใหม่: **Editorial grid** — โครงสร้างมาจากเส้น hairline 1px และกริดที่ align กัน ไม่ใช่การ์ดโค้ง+เงา; gradient เหลือบทบาท accent (แถบ + ปุ่ม primary เดียว/หน้า + icon dialog). ค่าสี token เดิมไม่เปลี่ยน — เปลี่ยนแค่ *วิธีใช้*.
+
+### Primitives ใหม่ (`components/ui/`)
+| Component | ใช้ทำอะไร |
+|---|---|
+| `EditorialCard` (+ `.Section`) | การ์ดมุมเกือบเหลี่ยม (`rounded-[2px]`) ขอบ `border-neutral-300` ไม่มีเงา แบ่ง section ด้วย hairline; `accent` = แถบซ้าย 3px |
+| `FieldTable` | ตาราง label/value 2 คอลัมน์ align กัน คั่น `border-neutral-150`; `mono` สำหรับ ref/เวลา |
+| `StatusMarker` | swatch สี่เหลี่ยม 9px + ข้อความ (แทน pill ในบริบทตาราง); `Badge` pill ยังใช้ที่หัวข้อ/dialog |
+| `PageHeader` | หัวหน้าเตี้ย: accent bar ม่วง + `h1` + เส้นล่าง ไม่มี gradient bg ไม่ overlap (`PageHero` เดิมยังใช้กับหน้าอื่น) |
+| `Brand` | โลโก้คณะ (`public/logo-fms.svg`) + wordmark 2 ระดับ; `size="sm"` sidebar / `"lg"` หน้า public |
+
+### นโยบายสี (Editorial)
+- **ม่วง** = accent bar หัวข้อ + ปุ่ม primary เดียว/หน้า + เส้น chain done
+- **สถานะ** = `StatusMarker` swatch เล็ก (ไม่ระบายพื้นใหญ่)
+- **Filter chip active** = ขอบม่วง + พื้น `neutral-50` (เลิก `bg-grad-brand` เต็ม)
+- **ที่เหลือ** = ขาว/lavender + hairline เทา
+
+### Hairline conventions
+- แบ่งแถวในตาราง: `border-neutral-150`
+- เส้นแบ่ง section / rule ปกติ: `border-neutral-200`
+- ขอบนอกการ์ด / rule เข้ม: `border-neutral-300`
+
+### Typography — 3 roles
+`h1` (`text-3xl font-extrabold`) · `SectionTitle`/หัว section (`text-lg font-extrabold` + accent bar) · body (`text-base`). **mono** (`font-mono`) เฉพาะ ref ID, วันเวลา, timestamp.
+
+> สถานะ: นำร่องที่ `/approver` เท่านั้น — หน้าอื่นยังใช้ `PageHero`/`Card` เดิมจนกว่าจะยกเครื่องทีละหน้า
