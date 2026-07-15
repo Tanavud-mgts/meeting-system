@@ -116,7 +116,7 @@ function ApprovalChain({ doneCount }: { doneCount: number }) {
               </div>
               {!last && (
                 <span
-                  className={`mx-2 h-0.5 min-w-3 flex-1 ${
+                  className={`mx-2 h-px min-w-3 flex-1 ${
                     i < doneCount ? "bg-brand-primary" : "bg-neutral-200"
                   }`}
                 />

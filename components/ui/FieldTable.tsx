@@ -15,7 +15,7 @@ export function FieldTable({ rows }: { rows: FieldRow[] }) {
         const last = i === rows.length - 1;
         const divider = last ? "" : "border-b border-neutral-150";
         return (
-          <div key={row.label} className="contents">
+          <div key={`${row.label}-${i}`} className="contents">
             <dt
               className={`py-2 pr-4 text-text-muted ${divider}`}
             >
