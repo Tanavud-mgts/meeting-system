@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { PageHero } from "@/components/ui/PageHero";
+import { Brand } from "@/components/ui/Brand";
 
 type Room = {
   id: string;
@@ -216,11 +218,16 @@ export default function SetupWizardPage() {
   const totalRooms = rooms.length;
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        ตั้งค่าระบบเริ่มต้น
-      </h1>
-      <p className="mt-1 text-sm text-text-secondary">ขั้นตอน {step} / 4</p>
+    <div className="bg-page-wash min-h-screen animate-fade-in-up pb-10">
+      <div className="flex justify-center pt-8">
+        <Brand size="lg" />
+      </div>
+      <PageHero
+        title="ตั้งค่าระบบเริ่มต้น"
+        subtitle={`ขั้นตอน ${step} / 4`}
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       {step === 1 && (
         <Card className="mt-6">
@@ -439,6 +446,7 @@ export default function SetupWizardPage() {
           </div>
         </Card>
       )}
+      </div>
     </div>
   );
 }

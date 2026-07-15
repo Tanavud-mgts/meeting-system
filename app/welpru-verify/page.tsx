@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Brand } from "@/components/ui/Brand";
 
 type Status = "loading" | "success" | "error";
 
@@ -58,8 +59,10 @@ export default function WelpruVerifyPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-md animate-fade-in-up p-6">
-      <Card>
+    <div className="bg-grad-hero relative flex flex-1 items-center justify-center overflow-hidden p-6">
+      <div className="hero-glow pointer-events-none absolute inset-0" />
+      <Card className="relative w-full max-w-md animate-fade-in-up">
+        <Brand size="lg" className="mb-4" />
         {status === "loading" && (
           <div className="space-y-3">
             <Skeleton className="h-6 w-3/4" />

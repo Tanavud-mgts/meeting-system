@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Brand } from "@/components/ui/Brand";
 
 const PASSWORD_LOGIN_ENABLED =
   process.env.NEXT_PUBLIC_ENABLE_PASSWORD_LOGIN === "true";
@@ -76,15 +77,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center p-6">
-      <Card className="w-full max-w-sm animate-fade-in-up">
+    <div className="bg-grad-hero relative flex flex-1 items-center justify-center overflow-hidden p-6">
+      <div className="hero-glow pointer-events-none absolute inset-0" />
+      <Card
+        accent="warning"
+        className="relative w-full max-w-sm animate-fade-in-up"
+      >
         <div className="flex flex-col gap-4">
-          <h1 className="text-xl font-semibold text-text-primary">
-            เข้าสู่ระบบ
-          </h1>
-          <p className="text-sm text-text-secondary">
-            ระบบจองห้องประชุม มหาวิทยาลัยราชภัฏลำปาง
-          </p>
+          <Brand size="lg" showWordmark={false} className="mb-1" />
+          <div>
+            <h1 className="text-xl font-extrabold text-text-primary">
+              เข้าสู่ระบบ
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              ระบบจองห้องประชุม มหาวิทยาลัยราชภัฏลำปาง
+            </p>
+          </div>
 
           {error && <p className="text-sm text-danger-text">{error}</p>}
 
