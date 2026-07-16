@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EditorialCard } from "@/components/ui/EditorialCard";
+import { FieldTable } from "@/components/ui/FieldTable";
 
 type UserRow = {
   id: string;
@@ -151,74 +152,96 @@ export default function DashboardUsersPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="จัดการผู้ใช้"
         subtitle="กำหนดบทบาทและสิทธิ์ผู้ใช้งานในระบบ"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
 
       {loadError && (
-        <p className="mt-4 text-sm text-danger-text">{loadError}</p>
+        <p className="text-sm text-danger-text">{loadError}</p>
       )}
       {actionError && (
-        <p className="mt-4 text-sm text-danger-text">{actionError}</p>
+        <p className="text-sm text-danger-text">{actionError}</p>
       )}
 
       {loading && (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
         </div>
       )}
 
       {!loading && (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-4">
           {users.map((u) => (
-            <Card key={u.id}>
-              <div className="flex items-center gap-3">
-                <Avatar name={u.full_name} />
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-text-primary">
-                    {u.full_name}
-                  </p>
-                  <p className="truncate text-sm text-text-secondary">
-                    {u.email}
-                  </p>
+            <EditorialCard
+              key={u.id}
+              accent={chainIds.has(u.id) ? "brand" : "none"}
+            >
+              <EditorialCard.Section>
+                <div className="flex items-center gap-3">
+                  <Avatar name={u.full_name} />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-bold text-text-primary">
+                        {u.full_name}
+                      </p>
+                      {chainIds.has(u.id) && (
+                        <span className="rounded-[2px] bg-neutral-150 px-2 py-0.5 text-xs font-bold text-brand-primary-strong">
+                          ใน Approval Chain
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-sm text-text-secondary">
+                      {u.email}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <p className="mt-2 text-sm text-text-secondary">
-                รหัสบุคลากร: {u.staff_id ?? "—"} · เบอร์โทร: {u.phone ?? "—"}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <select
-                  value={u.role}
-                  disabled={savingId === u.id}
-                  onChange={(e) =>
-                    handleRoleChange(
-                      u,
-                      e.target.value as "user" | "approver" | "admin"
-                    )
-                  }
-                  className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
-                >
-                  <option value="user">{ROLE_LABEL.user}</option>
-                  <option value="approver">{ROLE_LABEL.approver}</option>
-                  <option value="admin">{ROLE_LABEL.admin}</option>
-                </select>
-                <input
-                  type="text"
-                  defaultValue={u.department ?? ""}
-                  disabled={savingId === u.id}
-                  onBlur={(e) => handleDepartmentBlur(u, e.target.value)}
-                  placeholder="หน่วยงาน"
-                  className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+              </EditorialCard.Section>
+
+              <EditorialCard.Section className="!py-0">
+                <FieldTable
+                  rows={[
+                    { label: "รหัสบุคลากร", value: u.staff_id ?? "—" },
+                    { label: "เบอร์โทร", value: u.phone ?? "—" },
+                    { label: "บทบาท", value: ROLE_LABEL[u.role] ?? u.role },
+                  ]}
                 />
-                <Button variant="danger" onClick={() => setAnonymizeTarget(u)}>
-                  ลบข้อมูลส่วนตัว (PDPA)
-                </Button>
-              </div>
-            </Card>
+              </EditorialCard.Section>
+
+              <EditorialCard.Section>
+                <div className="flex flex-wrap items-center gap-3">
+                  <select
+                    value={u.role}
+                    disabled={savingId === u.id}
+                    onChange={(e) =>
+                      handleRoleChange(
+                        u,
+                        e.target.value as "user" | "approver" | "admin"
+                      )
+                    }
+                    className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+                  >
+                    <option value="user">{ROLE_LABEL.user}</option>
+                    <option value="approver">{ROLE_LABEL.approver}</option>
+                    <option value="admin">{ROLE_LABEL.admin}</option>
+                  </select>
+                  <input
+                    type="text"
+                    defaultValue={u.department ?? ""}
+                    disabled={savingId === u.id}
+                    onBlur={(e) => handleDepartmentBlur(u, e.target.value)}
+                    placeholder="หน่วยงาน"
+                    className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+                  />
+                  <Button variant="danger" onClick={() => setAnonymizeTarget(u)}>
+                    ลบข้อมูลส่วนตัว (PDPA)
+                  </Button>
+                </div>
+              </EditorialCard.Section>
+            </EditorialCard>
           ))}
         </div>
       )}

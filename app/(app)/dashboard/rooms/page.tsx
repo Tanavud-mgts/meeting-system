@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EditorialCard } from "@/components/ui/EditorialCard";
+import { FieldTable } from "@/components/ui/FieldTable";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 
 type Room = {
   id: string;
@@ -193,61 +195,88 @@ export default function DashboardRoomsPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="จัดการห้องประชุม"
         subtitle="เพิ่ม แก้ไข และจัดการสถานะห้องประชุม"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
       <div className="mb-4 flex justify-end">
         <Button onClick={openCreateForm}>เพิ่มห้องใหม่</Button>
       </div>
 
       {loadError && (
-        <p className="mt-4 text-sm text-danger-text">{loadError}</p>
+        <p className="text-sm text-danger-text">{loadError}</p>
       )}
       {actionError && (
-        <p className="mt-4 text-sm text-danger-text">{actionError}</p>
+        <p className="text-sm text-danger-text">{actionError}</p>
       )}
       {deleteError && (
-        <p className="mt-4 text-sm text-danger-text">{deleteError}</p>
+        <p className="text-sm text-danger-text">{deleteError}</p>
       )}
 
       {!loading && rooms.length === 0 && !loadError && (
-        <p className="mt-4 text-sm text-text-secondary">ยังไม่มีห้องประชุม</p>
+        <div className="rounded-[2px] border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
+          ยังไม่มีห้องประชุม
+        </div>
       )}
 
       {loading && (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
         </div>
       )}
 
       {!loading && (
-        <div className="mt-4 space-y-3">
-          {rooms.map((r) => (
-            <Card key={r.id}>
-              <p className="font-medium text-text-primary">{r.name}</p>
-              <p className="text-sm text-text-secondary">
-                ความจุ {r.capacity} คน — สถานะ:{" "}
-                {STATUS_LABEL[r.status] ?? r.status}
-              </p>
-              {r.equipment.length > 0 && (
-                <p className="text-sm text-text-secondary">
-                  อุปกรณ์: {r.equipment.join(", ")}
-                </p>
-              )}
-              <div className="mt-3 flex gap-3">
-                <Button variant="secondary" onClick={() => openEditForm(r)}>
-                  แก้ไข
-                </Button>
-                <Button variant="danger" onClick={() => handleDeleteClick(r)}>
-                  ลบ
-                </Button>
-              </div>
-            </Card>
-          ))}
+        <div className="space-y-4">
+          {rooms.map((r) => {
+            const tone =
+              r.status === "available"
+                ? "success"
+                : r.status === "busy"
+                  ? "warning"
+                  : "neutral";
+            return (
+              <EditorialCard
+                key={r.id}
+                accent={tone === "neutral" ? "none" : tone}
+              >
+                <EditorialCard.Section>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-lg font-bold text-text-primary">
+                      {r.name}
+                    </p>
+                    <StatusMarker tone={tone}>
+                      {STATUS_LABEL[r.status] ?? r.status}
+                    </StatusMarker>
+                  </div>
+                </EditorialCard.Section>
+
+                <EditorialCard.Section className="!py-0">
+                  <FieldTable
+                    rows={[
+                      { label: "ความจุ", value: `${r.capacity} คน` },
+                      ...(r.equipment.length > 0
+                        ? [{ label: "อุปกรณ์", value: r.equipment.join(", ") }]
+                        : []),
+                    ]}
+                  />
+                </EditorialCard.Section>
+
+                <EditorialCard.Section>
+                  <div className="flex gap-3">
+                    <Button variant="secondary" onClick={() => openEditForm(r)}>
+                      แก้ไข
+                    </Button>
+                    <Button variant="danger" onClick={() => handleDeleteClick(r)}>
+                      ลบ
+                    </Button>
+                  </div>
+                </EditorialCard.Section>
+              </EditorialCard>
+            );
+          })}
         </div>
       )}
 

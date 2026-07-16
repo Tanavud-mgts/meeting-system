@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionTitle } from "@/components/ui/PageHero";
+import { EditorialCard } from "@/components/ui/EditorialCard";
+import { FieldTable } from "@/components/ui/FieldTable";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 
 type ServiceName =
   | "make_com"
@@ -70,9 +72,7 @@ function emptyQuotaRow(service: ServiceName): QuotaRow {
 }
 
 export default function DashboardIntegrationsPage() {
-  const [quotaMap, setQuotaMap] = useState<
-    Record<string, QuotaRow>
-  >({});
+  const [quotaMap, setQuotaMap] = useState<Record<string, QuotaRow>>({});
   const [quotaError, setQuotaError] = useState<string | null>(null);
 
   const [failedLogs, setFailedLogs] = useState<FailedLogRow[]>([]);
@@ -132,7 +132,6 @@ export default function DashboardIntegrationsPage() {
 
   useEffect(() => {
     loadQuota();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -149,113 +148,143 @@ export default function DashboardIntegrationsPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="Integration Health"
         subtitle="สถานะการเชื่อมต่อบริการภายนอกและโควตาการแจ้งเตือน"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
+        {quotaError && (
+          <p className="text-sm text-danger-text">{quotaError}</p>
+        )}
 
-      {quotaError && (
-        <p className="mt-4 text-sm text-danger-text">{quotaError}</p>
-      )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {SERVICES.map((service) => {
+            const row = quotaMap[service] ?? emptyQuotaRow(service);
+            const referenceLimit = REFERENCE_LIMIT[service];
+            const health =
+              row.failed_count > 0
+                ? "danger"
+                : row.total_calls > 0
+                  ? "success"
+                  : "neutral";
+            const healthLabel =
+              health === "danger"
+                ? "มีข้อผิดพลาด"
+                : health === "success"
+                  ? "ปกติ"
+                  : "ยังไม่เรียก";
+            return (
+              <EditorialCard
+                key={service}
+                accent={health === "neutral" ? "none" : health}
+              >
+                <EditorialCard.Section>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-md font-bold text-text-primary">
+                      {SERVICE_LABEL[service]}
+                    </p>
+                    <StatusMarker tone={health}>{healthLabel}</StatusMarker>
+                  </div>
+                </EditorialCard.Section>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {SERVICES.map((service) => {
-          const row = quotaMap[service] ?? emptyQuotaRow(service);
-          const referenceLimit = REFERENCE_LIMIT[service];
+                <EditorialCard.Section className="!py-0">
+                  <FieldTable
+                    rows={[
+                      { label: "เรียกทั้งหมด", value: `${row.total_calls} ครั้ง` },
+                      { label: "สำเร็จ", value: row.success_count },
+                      { label: "ล้มเหลว", value: row.failed_count },
+                      {
+                        label: "ล่าสุด",
+                        value: row.last_called_at
+                          ? new Date(row.last_called_at).toLocaleString("th-TH")
+                          : "ยังไม่เคยเรียกเดือนนี้",
+                        mono: row.last_called_at !== null,
+                      },
+                    ]}
+                  />
+                </EditorialCard.Section>
 
-          return (
-            <Card key={service}>
-              <p className="font-medium text-text-primary">
+                {referenceLimit && (
+                  <EditorialCard.Section>
+                    <p className="text-xs text-text-muted">{referenceLimit}</p>
+                  </EditorialCard.Section>
+                )}
+              </EditorialCard>
+            );
+          })}
+        </div>
+
+        <div className="mt-6">
+          <SectionTitle>รายการที่ล้มเหลวล่าสุด</SectionTitle>
+        </div>
+
+        <div className="mt-4">
+          <select
+            value={serviceFilter}
+            onChange={(e) => handleServiceFilterChange(e.target.value)}
+            className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+          >
+            <option value="">ทั้งหมด</option>
+            {SERVICES.map((service) => (
+              <option key={service} value={service}>
                 {SERVICE_LABEL[service]}
-              </p>
-              <p className="mt-2 text-sm text-text-secondary">
-                เรียกทั้งหมด: {row.total_calls} ครั้ง
-              </p>
-              <p className="text-sm text-text-secondary">
-                สำเร็จ: {row.success_count} · ล้มเหลว: {row.failed_count}
-              </p>
-              <p className="text-sm text-text-secondary">
-                เรียกล่าสุด:{" "}
-                {row.last_called_at
-                  ? new Date(row.last_called_at).toLocaleString("th-TH")
-                  : "ยังไม่เคยเรียกเดือนนี้"}
-              </p>
-              {referenceLimit && (
-                <p className="mt-2 text-xs text-text-secondary">
-                  {referenceLimit}
-                </p>
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {logsError && (
+          <p className="mt-4 text-sm text-danger-text">{logsError}</p>
+        )}
+
+        {!logsError && failedLogs.length === 0 && (
+          <div className="mt-4 rounded-[2px] border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
+            ไม่พบรายการที่ล้มเหลว
+          </div>
+        )}
+
+        <div className="mt-4 space-y-4">
+          {failedLogs.map((log) => (
+            <EditorialCard key={log.id} accent="danger">
+              <EditorialCard.Section>
+                <div className="flex items-center justify-between gap-2">
+                  <StatusMarker tone="danger">
+                    {SERVICE_LABEL[log.service]}
+                  </StatusMarker>
+                  <span className="font-mono text-xs text-text-muted">
+                    {new Date(log.created_at).toLocaleString("th-TH")}
+                  </span>
+                </div>
+              </EditorialCard.Section>
+              {log.error_detail && (
+                <EditorialCard.Section>
+                  <p className="text-sm text-text-primary">{log.error_detail}</p>
+                </EditorialCard.Section>
               )}
-            </Card>
-          );
-        })}
-      </div>
-
-      <h2 className="mt-8 text-lg font-semibold text-text-primary">
-        รายการที่ล้มเหลวล่าสุด
-      </h2>
-
-      <div className="mt-4">
-        <select
-          value={serviceFilter}
-          onChange={(e) => handleServiceFilterChange(e.target.value)}
-          className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
-        >
-          <option value="">ทั้งหมด</option>
-          {SERVICES.map((service) => (
-            <option key={service} value={service}>
-              {SERVICE_LABEL[service]}
-            </option>
+            </EditorialCard>
           ))}
-        </select>
-      </div>
+        </div>
 
-      {logsError && (
-        <p className="mt-4 text-sm text-danger-text">{logsError}</p>
-      )}
-
-      {!logsError && failedLogs.length === 0 && (
-        <p className="mt-4 text-sm text-text-secondary">
-          ไม่พบรายการที่ล้มเหลว
-        </p>
-      )}
-
-      <div className="mt-4 space-y-3">
-        {failedLogs.map((log) => (
-          <Card key={log.id}>
-            <Badge tone="danger">{SERVICE_LABEL[log.service]}</Badge>
-            {log.error_detail && (
-              <p className="mt-2 text-sm text-text-secondary">
-                {log.error_detail}
-              </p>
-            )}
-            <p className="mt-1 text-sm text-text-secondary">
-              {new Date(log.created_at).toLocaleString("th-TH")}
-            </p>
-          </Card>
-        ))}
-      </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        <Button
-          variant="secondary"
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-          disabled={page === 0}
-        >
-          ก่อนหน้า
-        </Button>
-        <span className="text-sm text-text-secondary">
-          หน้า {page + 1} / {totalPages}
-        </span>
-        <Button
-          variant="secondary"
-          onClick={() => setPage((p) => p + 1)}
-          disabled={page + 1 >= totalPages}
-        >
-          ถัดไป
-        </Button>
-      </div>
+        <div className="mt-4 flex items-center justify-between">
+          <Button
+            variant="secondary"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+          >
+            ก่อนหน้า
+          </Button>
+          <span className="text-sm text-text-secondary">
+            หน้า {page + 1} / {totalPages}
+          </span>
+          <Button
+            variant="secondary"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page + 1 >= totalPages}
+          >
+            ถัดไป
+          </Button>
+        </div>
       </div>
     </div>
   );
