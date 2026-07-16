@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionTitle } from "@/components/ui/PageHero";
+import { EditorialCard } from "@/components/ui/EditorialCard";
 
 type Profile = {
   full_name: string;
@@ -272,12 +273,12 @@ export default function ProfilePage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="โปรไฟล์ของฉัน"
         subtitle="ข้อมูลบัญชีและการเชื่อมต่อการแจ้งเตือน"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
 
       {loadError && <p className="mt-4 text-sm text-danger-text">{loadError}</p>}
 
@@ -290,26 +291,29 @@ export default function ProfilePage() {
 
       {!loading && profile && (
         <>
-          {/* Gradient header */}
-          <div className="overflow-hidden rounded-lg shadow-card">
-            <div className="bg-grad-brand flex items-center gap-4 p-5">
-              <Avatar name={profile.full_name} size="lg" tone="inverse" />
-              <div className="min-w-0">
-                <p className="truncate text-lg font-extrabold text-text-on-primary">
-                  {profile.full_name}
-                </p>
-                <p className="truncate text-sm text-text-on-hero-muted">
-                  {profile.email}
-                </p>
-                <span className="mt-2 inline-block rounded-pill bg-white/20 px-2.5 py-0.5 text-xs font-bold text-text-on-primary">
-                  {ROLE_LABEL[profile.role] ?? profile.role}
-                </span>
+          {/* หัวข้อมูลตัวตน — flat */}
+          <EditorialCard accent="brand">
+            <EditorialCard.Section>
+              <div className="flex items-center gap-4">
+                <Avatar name={profile.full_name} size="lg" />
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-extrabold text-text-primary">
+                    {profile.full_name}
+                  </p>
+                  <p className="truncate text-sm text-text-secondary">
+                    {profile.email}
+                  </p>
+                  <span className="mt-2 inline-block rounded-[2px] bg-neutral-150 px-2.5 py-0.5 text-xs font-bold text-brand-primary-strong">
+                    {ROLE_LABEL[profile.role] ?? profile.role}
+                  </span>
+                </div>
               </div>
-            </div>
-          </div>
+            </EditorialCard.Section>
+          </EditorialCard>
 
           {/* Info / edit */}
-          <Card className="mt-4">
+          <EditorialCard className="mt-4">
+            <EditorialCard.Section>
             {!editing ? (
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -419,10 +423,12 @@ export default function ProfilePage() {
                 </div>
               </>
             )}
-          </Card>
+            </EditorialCard.Section>
+          </EditorialCard>
 
-          <Card className="mt-4">
-            <p className="font-medium text-text-primary">เชื่อมต่อ LINE</p>
+          <EditorialCard className="mt-4">
+            <EditorialCard.Section>
+            <SectionTitle>เชื่อมต่อ LINE</SectionTitle>
             {lineUserId ? (
               <>
                 <p className="mt-1 text-sm text-success-text">
@@ -481,12 +487,12 @@ export default function ProfilePage() {
                 </div>
               </>
             )}
-          </Card>
+            </EditorialCard.Section>
+          </EditorialCard>
 
-          <Card className="mt-4">
-            <p className="font-medium text-text-primary">
-              ยืนยันการรับแจ้งเตือนผ่าน WeLPRU
-            </p>
+          <EditorialCard className="mt-4">
+            <EditorialCard.Section>
+            <SectionTitle>ยืนยันการรับแจ้งเตือนผ่าน WeLPRU</SectionTitle>
             {welpruVerifiedAt ? (
               <p className="mt-1 text-sm text-success-text">
                 ✅ ยืนยันแล้วเมื่อ{" "}
@@ -519,7 +525,8 @@ export default function ProfilePage() {
                 </div>
               </>
             )}
-          </Card>
+            </EditorialCard.Section>
+          </EditorialCard>
 
           <div className="mt-4">
             <Button

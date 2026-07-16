@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { EditorialCard } from "@/components/ui/EditorialCard";
+import { StatusMarker } from "@/components/ui/StatusMarker";
+import { SectionTitle } from "@/components/ui/PageHero";
 import {
   buildWeekDays,
   weekRangeISO,
@@ -174,68 +175,71 @@ export default function HomePage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      {/* Hero แบรนด์ */}
-      <div className="bg-grad-hero relative overflow-hidden px-6 pb-12 pt-8">
-        <div className="hero-glow pointer-events-none absolute inset-0" />
-        <div className="relative mx-auto flex max-w-2xl items-center gap-4">
-          <Avatar name={data.fullName} size="lg" tone="inverse" />
+      {/* หัวหน้า — flat editorial */}
+      <div className="border-b border-neutral-300 bg-surface-card px-6 pb-5 pt-6">
+        <div className="mx-auto flex max-w-2xl items-center gap-4">
+          <Avatar name={data.fullName} size="lg" />
           <div className="min-w-0">
-            <p className="text-sm text-text-on-hero-muted">ยินดีต้อนรับ</p>
-            <p className="truncate text-2xl font-extrabold tracking-tight text-text-on-primary">
+            <p className="text-sm text-text-secondary">ยินดีต้อนรับ</p>
+            <p className="truncate text-2xl font-extrabold tracking-tight text-text-primary">
               {data.fullName}
             </p>
-            <span className="mt-2 inline-block rounded-pill bg-white/20 px-2.5 py-0.5 text-xs font-bold text-text-on-primary">
+            <span className="mt-2 inline-block rounded-[2px] bg-neutral-150 px-2.5 py-0.5 text-xs font-bold text-brand-primary-strong">
               {ROLE_LABEL[data.role] ?? data.role}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
 
       {/* การ์ดสถานะของฉัน */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Card>
-          <p className="text-sm text-text-secondary">การจองถัดไปของฉัน</p>
-          {data.nextBooking ? (
-            <div className="mt-1">
-              <p className="font-medium text-text-primary">
-                {data.nextBooking.title}
-              </p>
-              <p className="text-sm text-text-secondary">
-                ห้อง {data.nextBooking.room_name}
-              </p>
-              <p className="text-sm text-text-secondary">
-                {formatDateTime(data.nextBooking.start_time)}
-              </p>
+        <EditorialCard>
+          <EditorialCard.Section>
+            <p className="text-sm text-text-secondary">การจองถัดไปของฉัน</p>
+            {data.nextBooking ? (
               <div className="mt-1">
-                <Badge
-                  tone={STATUS_TONE[data.nextBooking.final_status] ?? "neutral"}
-                >
-                  {STATUS_LABEL[data.nextBooking.final_status] ??
-                    data.nextBooking.final_status}
-                </Badge>
+                <p className="font-bold text-text-primary">
+                  {data.nextBooking.title}
+                </p>
+                <p className="text-sm text-text-secondary">
+                  ห้อง {data.nextBooking.room_name}
+                </p>
+                <p className="font-mono text-sm text-text-secondary">
+                  {formatDateTime(data.nextBooking.start_time)}
+                </p>
+                <div className="mt-2">
+                  <StatusMarker
+                    tone={STATUS_TONE[data.nextBooking.final_status] ?? "neutral"}
+                  >
+                    {STATUS_LABEL[data.nextBooking.final_status] ??
+                      data.nextBooking.final_status}
+                  </StatusMarker>
+                </div>
               </div>
-            </div>
-          ) : (
-            <p className="mt-1 text-sm text-text-muted">
-              ยังไม่มีการจองที่กำลังจะถึง
-            </p>
-          )}
-        </Card>
+            ) : (
+              <p className="mt-1 text-sm text-text-muted">
+                ยังไม่มีการจองที่กำลังจะถึง
+              </p>
+            )}
+          </EditorialCard.Section>
+        </EditorialCard>
 
-        <Card>
-          <p className="text-sm text-text-secondary">คำขอที่รออนุมัติของฉัน</p>
-          <p className="mt-1 text-xl font-semibold text-text-primary">
-            {data.myPendingCount.toLocaleString("th-TH")}
-          </p>
-          <Link
-            href="/booking"
-            className="bg-grad-brand shadow-brand mt-3 inline-block rounded-sm px-4 py-2 text-sm font-bold text-text-on-primary transition-transform duration-150 hover:scale-[1.02]"
-          >
-            จองห้องประชุม
-          </Link>
-        </Card>
+        <EditorialCard>
+          <EditorialCard.Section>
+            <p className="text-sm text-text-secondary">คำขอที่รออนุมัติของฉัน</p>
+            <p className="mt-1 font-mono text-xl font-bold text-text-primary">
+              {data.myPendingCount.toLocaleString("th-TH")}
+            </p>
+            <Link
+              href="/booking"
+              className="bg-grad-brand shadow-brand mt-3 inline-block rounded-sm px-4 py-2 text-sm font-bold text-text-on-primary transition-transform duration-150 hover:scale-[1.02]"
+            >
+              จองห้องประชุม
+            </Link>
+          </EditorialCard.Section>
+        </EditorialCard>
       </div>
 
       {/* การ์ดตามบทบาท */}
@@ -244,7 +248,7 @@ export default function HomePage() {
           {data.waitingCount !== null && (
             <Link
               href="/approver"
-              className="flex flex-col gap-0.5 rounded-lg border border-warning-border bg-warning-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised"
+              className="flex flex-col gap-1 rounded-[2px] border border-l-[3px] border-warning-border border-l-warning-accent bg-warning-surface p-5 transition-colors hover:bg-warning-surface/70"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm text-text-secondary">
@@ -254,7 +258,7 @@ export default function HomePage() {
                   ไปหน้าคำขออนุมัติ →
                 </span>
               </div>
-              <span className="text-2xl font-extrabold text-warning-text">
+              <span className="font-mono text-2xl font-bold text-warning-text">
                 {data.waitingCount.toLocaleString("th-TH")}
               </span>
             </Link>
@@ -262,9 +266,9 @@ export default function HomePage() {
           {data.role === "admin" && (
             <Link
               href="/dashboard"
-              className="flex items-center justify-between rounded-lg border border-neutral-200 bg-surface-card p-5 shadow-card transition-shadow duration-150 hover:shadow-raised"
+              className="flex items-center justify-between rounded-[2px] border border-neutral-300 bg-surface-card p-5 transition-colors hover:bg-neutral-50"
             >
-              <span className="font-medium text-text-primary">ภาพรวมระบบ</span>
+              <span className="font-bold text-text-primary">ภาพรวมระบบ</span>
               <span className="text-sm text-brand-primary">ดูสถิติ →</span>
             </Link>
           )}
@@ -272,67 +276,66 @@ export default function HomePage() {
       )}
 
       {/* แถบสัปดาห์นี้ (องค์กร) */}
-      <Card className="mt-4">
-        <p className="flex items-center gap-2.5 text-sm font-bold text-text-primary">
-          <span className="section-bar" aria-hidden="true" />
-          ตารางการจองสัปดาห์นี้
-        </p>
-        <div className="mt-3 grid grid-cols-7 gap-1">
-          {data.weekDays.map((d, i) => (
-            <div
-              key={i}
-              className={`rounded-sm p-2 text-center ${
-                d.isToday ? "bg-grad-brand shadow-brand" : ""
-              }`}
-            >
-              <p
-                className={`text-xs ${
-                  d.isToday ? "text-text-on-hero-muted" : "text-text-secondary"
+      <EditorialCard className="mt-4">
+        <EditorialCard.Section>
+          <SectionTitle>ตารางการจองสัปดาห์นี้</SectionTitle>
+          <div className="mt-3 grid grid-cols-7 gap-1">
+            {data.weekDays.map((d, i) => (
+              <div
+                key={i}
+                className={`rounded-[2px] p-2 text-center ${
+                  d.isToday ? "bg-grad-brand shadow-brand" : ""
                 }`}
               >
-                {d.label}
-              </p>
-              <p
-                className={`text-sm ${
-                  d.isToday
-                    ? "font-extrabold text-text-on-primary"
-                    : "text-text-primary"
-                }`}
-              >
-                {d.dayOfMonth}
-              </p>
-              {d.count > 0 ? (
-                <p
-                  className={`text-xs font-bold ${
-                    d.isToday ? "text-text-on-hero-gold" : "text-brand-primary"
-                  }`}
-                >
-                  {d.count.toLocaleString("th-TH")}
-                </p>
-              ) : (
                 <p
                   className={`text-xs ${
-                    d.isToday ? "text-text-on-hero-muted" : "text-text-muted"
+                    d.isToday ? "text-text-on-hero-muted" : "text-text-secondary"
                   }`}
                 >
-                  —
+                  {d.label}
                 </p>
-              )}
-            </div>
-          ))}
-        </div>
-        {emptyWeek && (
-          <p className="mt-2 text-xs text-text-muted">
-            ยังไม่มีการจองในสัปดาห์นี้
-          </p>
-        )}
-        <Link
-          href="/calendar"
-          className="mt-3 inline-block text-sm font-bold text-brand-primary hover:underline"
-        >
-          ดูปฏิทินทั้งหมด →
-        </Link>
-      </Card>
+                <p
+                  className={`font-mono text-sm ${
+                    d.isToday
+                      ? "font-extrabold text-text-on-primary"
+                      : "text-text-primary"
+                  }`}
+                >
+                  {d.dayOfMonth}
+                </p>
+                {d.count > 0 ? (
+                  <p
+                    className={`font-mono text-xs font-bold ${
+                      d.isToday ? "text-text-on-hero-gold" : "text-brand-primary"
+                    }`}
+                  >
+                    {d.count.toLocaleString("th-TH")}
+                  </p>
+                ) : (
+                  <p
+                    className={`text-xs ${
+                      d.isToday ? "text-text-on-hero-muted" : "text-text-muted"
+                    }`}
+                  >
+                    —
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+          {emptyWeek && (
+            <p className="mt-2 text-xs text-text-muted">
+              ยังไม่มีการจองในสัปดาห์นี้
+            </p>
+          )}
+          <Link
+            href="/calendar"
+            className="mt-3 inline-block text-sm font-bold text-brand-primary hover:underline"
+          >
+            ดูปฏิทินทั้งหมด →
+          </Link>
+        </EditorialCard.Section>
+      </EditorialCard>
       </div>
     </div>
   );
