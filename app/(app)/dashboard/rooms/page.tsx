@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero } from "@/components/ui/PageHero";
 
 type Room = {
   id: string;
@@ -191,11 +192,14 @@ export default function DashboardRoomsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">
-          จัดการห้องประชุม
-        </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="จัดการห้องประชุม"
+        subtitle="เพิ่ม แก้ไข และจัดการสถานะห้องประชุม"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="mb-4 flex justify-end">
         <Button onClick={openCreateForm}>เพิ่มห้องใหม่</Button>
       </div>
 
@@ -325,6 +329,7 @@ export default function DashboardRoomsPage() {
           </>
         )}
       </Modal>
+      </div>
     </div>
   );
 }

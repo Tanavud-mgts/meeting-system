@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero, SectionTitle } from "@/components/ui/PageHero";
 
 type BookingConfig = {
   office_start_hour: number;
@@ -18,6 +19,67 @@ type Room = {
   capacity: number;
   equipment: string[];
 };
+
+// สีประจำห้อง (วนตามลำดับ) — แถบบนการ์ด + ปุ่มเลือกห้อง ตามแบบ Claude Design
+const ROOM_ACCENTS = [
+  { top: "border-t-brand-primary", btn: "bg-brand-primary" },
+  { top: "border-t-brand-accent", btn: "bg-brand-accent" },
+  { top: "border-t-success-solid", btn: "bg-success-solid" },
+  { top: "border-t-warning-accent", btn: "bg-warning-accent" },
+  { top: "border-t-accent-pink", btn: "bg-accent-pink" },
+  { top: "border-t-brand-deep", btn: "bg-brand-deep" },
+];
+
+// สี chip อุปกรณ์ประจำชนิดที่พบบ่อย (รองรับทั้งชื่อไทย/อังกฤษในฐานข้อมูล)
+// ชนิดอื่นใช้โทนม่วงกลาง
+const EQUIP_TAG: Record<string, string> = {
+  โปรเจกเตอร์: "bg-tag-blue-surface text-tag-blue-text",
+  projector: "bg-tag-blue-surface text-tag-blue-text",
+  ไวท์บอร์ด: "bg-tag-orange-surface text-tag-orange-text",
+  whiteboard: "bg-tag-orange-surface text-tag-orange-text",
+  ไมโครโฟน: "bg-tag-pink-surface text-tag-pink-text",
+  microphone: "bg-tag-pink-surface text-tag-pink-text",
+  mic: "bg-tag-pink-surface text-tag-pink-text",
+};
+const EQUIP_TAG_DEFAULT = "bg-neutral-150 text-brand-primary-strong";
+
+function HeroStep({
+  n,
+  label,
+  active,
+  done,
+}: {
+  n: number;
+  label: string;
+  active: boolean;
+  done: boolean;
+}) {
+  return (
+    <div className="flex flex-none items-center gap-3">
+      <div
+        className={`flex h-10 w-10 items-center justify-center rounded-full text-md font-extrabold transition-all duration-200 ${
+          active || done
+            ? "bg-grad-brand text-text-on-primary ring-4 ring-white/20"
+            : "border-2 border-white/40 bg-white/10 text-text-on-hero-muted"
+        }`}
+      >
+        {done ? "✓" : n}
+      </div>
+      <div className="flex flex-col leading-tight">
+        <span className="text-xs font-semibold text-text-on-hero-muted">
+          ขั้นตอนที่ {n}
+        </span>
+        <span
+          className={`text-base font-bold ${
+            active || done ? "text-text-on-primary" : "text-text-on-hero-muted"
+          }`}
+        >
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function BookingPage() {
   const [step, setStep] = useState<1 | 2>(1);
@@ -192,29 +254,57 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">จองห้องประชุม</h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="จองห้องประชุม"
+        subtitle="ค้นหาห้องว่างและจองได้ในไม่กี่ขั้นตอน"
+        width="max-w-2xl"
+      >
+        <div className="mt-6 flex max-w-md items-center">
+          <HeroStep
+            n={1}
+            label="ค้นหาห้องว่าง"
+            active={step === 1 && !refId}
+            done={step === 2 || refId !== null}
+          />
+          <div
+            className={`mx-4 h-[3px] min-w-6 flex-1 rounded-full ${
+              step === 2 || refId !== null
+                ? "bg-text-on-hero-gold"
+                : "bg-white/30"
+            }`}
+          />
+          <HeroStep
+            n={2}
+            label="รายละเอียดการจอง"
+            active={step === 2 && !refId}
+            done={refId !== null}
+          />
+        </div>
+      </PageHero>
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       {step === 1 && (
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           {configError && (
             <p className="text-sm text-warning-text">
               ไม่สามารถโหลดเวลาทำการได้ กรุณาตรวจสอบเวลาทำการก่อนจอง
             </p>
           )}
 
-          <Card>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <label className="flex flex-col gap-1 text-sm text-text-secondary">
+          <Card accent="brand">
+            <SectionTitle>ค้นหาห้องว่าง</SectionTitle>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="flex flex-col gap-1 text-sm font-bold text-neutral-700">
                 วันที่
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="rounded-sm border border-neutral-300 px-3 py-2"
+                  className="rounded-sm border-[1.5px] border-neutral-300 px-3 py-2 font-normal"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-sm text-text-secondary">
+              <label className="flex flex-col gap-1 text-sm font-bold text-neutral-700">
                 เวลาเริ่ม
                 <input
                   type="time"
@@ -222,10 +312,10 @@ export default function BookingPage() {
                   min={minTime}
                   max={maxTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="rounded-sm border border-neutral-300 px-3 py-2"
+                  className="rounded-sm border-[1.5px] border-neutral-300 px-3 py-2 font-normal"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-sm text-text-secondary">
+              <label className="flex flex-col gap-1 text-sm font-bold text-neutral-700">
                 เวลาจบ
                 <input
                   type="time"
@@ -233,7 +323,17 @@ export default function BookingPage() {
                   min={minTime}
                   max={maxTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="rounded-sm border border-neutral-300 px-3 py-2"
+                  className="rounded-sm border-[1.5px] border-neutral-300 px-3 py-2 font-normal"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm font-bold text-neutral-700">
+                จำนวนผู้เข้าร่วม
+                <input
+                  type="number"
+                  min={1}
+                  value={attendees}
+                  onChange={(e) => setAttendees(e.target.value)}
+                  className="rounded-sm border-[1.5px] border-neutral-300 px-3 py-2 font-normal"
                 />
               </label>
             </div>
@@ -265,40 +365,115 @@ export default function BookingPage() {
             </div>
           )}
 
-          {!searching && hasSearched && (
-            <div className="space-y-2">
-              {rooms.map((room) => {
-                const unavailable = unavailableRoomIds.has(room.id);
-                return (
-                  <button
-                    key={room.id}
-                    type="button"
-                    disabled={unavailable}
-                    onClick={() => handleSelectRoom(room)}
-                    className={`w-full rounded-lg border border-neutral-200 bg-surface-card p-4 text-left shadow-card transition-shadow duration-150 ${
-                      unavailable
-                        ? "opacity-40"
-                        : "hover:bg-neutral-50 hover:shadow-raised"
-                    }`}
-                  >
-                    <p className="font-medium text-text-primary">{room.name}</p>
-                    <p className="text-sm text-text-secondary">
-                      ความจุ {room.capacity} คน
-                      {unavailable && " — ไม่ว่างในช่วงเวลานี้"}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {!searching &&
+            hasSearched &&
+            (() => {
+              const att = Number(attendees) || 0;
+              const fitRooms = rooms.filter(
+                (r) => att === 0 || r.capacity >= att
+              );
+              const availCount = fitRooms.filter(
+                (r) => !unavailableRoomIds.has(r.id)
+              ).length;
+              return (
+                <>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
+                    <h3 className="text-md font-extrabold text-neutral-700">
+                      {att > 0 ? `ห้องที่รองรับ ${att} คน` : "ผลการค้นหา"} ·{" "}
+                      {startTime}–{endTime} น.
+                    </h3>
+                    <span className="text-sm font-bold text-brand-accent">
+                      {availCount} ห้องว่าง
+                    </span>
+                  </div>
+
+                  {fitRooms.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
+                      ไม่พบห้องที่รองรับจำนวนผู้เข้าร่วม
+                      ลองลดจำนวนผู้เข้าร่วมหรือเปลี่ยนช่วงเวลา
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {fitRooms.map((room, i) => {
+                        const unavailable = unavailableRoomIds.has(room.id);
+                        const acc = ROOM_ACCENTS[i % ROOM_ACCENTS.length];
+                        return (
+                          <div
+                            key={room.id}
+                            className={`flex flex-col gap-3 rounded-lg border border-neutral-200 border-t-[5px] ${acc.top} bg-surface-card p-4 shadow-card transition-shadow duration-150 ${
+                              unavailable ? "opacity-50" : "hover:shadow-raised"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-md font-extrabold text-text-primary">
+                                  {room.name}
+                                </p>
+                                <p className="mt-0.5 text-sm text-text-secondary">
+                                  ความจุ {room.capacity} คน
+                                </p>
+                              </div>
+                              <span
+                                className={`flex-none rounded-pill px-2.5 py-0.5 text-xs font-bold ${
+                                  unavailable
+                                    ? "bg-neutral-150 text-text-muted"
+                                    : "bg-success-surface text-success-text"
+                                }`}
+                              >
+                                {unavailable ? "ไม่ว่างช่วงเวลานี้" : "ว่าง"}
+                              </span>
+                            </div>
+
+                            {room.equipment.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {room.equipment.map((eq) => (
+                                  <span
+                                    key={eq}
+                                    className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
+                                      EQUIP_TAG[eq] ?? EQUIP_TAG_DEFAULT
+                                    }`}
+                                  >
+                                    {eq}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            <button
+                              type="button"
+                              disabled={unavailable}
+                              onClick={() => handleSelectRoom(room)}
+                              className={`mt-auto w-full rounded-sm py-2.5 text-sm font-bold transition-transform duration-150 ${
+                                unavailable
+                                  ? "cursor-not-allowed bg-neutral-150 text-neutral-400"
+                                  : `${acc.btn} text-text-on-primary hover:scale-[1.02] active:scale-[0.98]`
+                              }`}
+                            >
+                              {unavailable ? "ไม่ว่าง" : "เลือกห้องนี้"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
         </div>
       )}
 
       {step === 2 && selectedRoom && !refId && (
-        <Card className="mt-6 space-y-4">
-          <p className="text-sm text-text-secondary">
-            ห้อง: {selectedRoom.name} (ความจุ {selectedRoom.capacity} คน)
-          </p>
+        <Card accent="warning" className="space-y-4">
+          <SectionTitle>รายละเอียดการจอง</SectionTitle>
+          <div className="bg-grad-brand rounded-md p-4 text-text-on-primary shadow-brand">
+            <p className="text-xs font-bold tracking-wide text-text-on-hero-muted">
+              ห้องที่เลือก
+            </p>
+            <p className="mt-0.5 text-lg font-extrabold">{selectedRoom.name}</p>
+            <p className="mt-0.5 text-sm text-text-on-hero-muted">
+              ความจุ {selectedRoom.capacity} คน
+            </p>
+          </div>
 
           <label className="flex flex-col gap-1 text-sm text-text-secondary">
             ชื่อการประชุม
@@ -344,6 +519,7 @@ export default function BookingPage() {
               กลับไปเลือกห้องใหม่
             </Button>
             <Button
+              variant="success"
               onClick={handleSubmit}
               disabled={
                 !title || !activity || !attendees || attendeesExceedsCapacity || submitting
@@ -356,13 +532,23 @@ export default function BookingPage() {
       )}
 
       {refId && (
-        <div className="mt-6 rounded-lg border border-success-accent bg-success-surface p-5 shadow-card">
-          <p className="font-medium text-success-text">จองห้องสำเร็จ</p>
-          <p className="mt-1 text-sm text-success-text">
-            หมายเลขอ้างอิง: {refId}
+        <div className="rounded-xl border-t-[5px] border-warning-accent bg-surface-card p-8 text-center shadow-raised">
+          <div className="bg-grad-success shadow-success mx-auto flex h-16 w-16 items-center justify-center rounded-full text-2xl font-extrabold text-text-on-primary">
+            ✓
+          </div>
+          <p className="mt-4 text-xl font-extrabold text-text-primary">
+            จองห้องประชุมสำเร็จ
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
+            ระบบได้บันทึกการจองของคุณเรียบร้อยแล้ว
+          </p>
+          <p className="mt-4 inline-block rounded-md border border-border-sunken bg-surface-sunken px-4 py-2 text-sm text-text-secondary">
+            หมายเลขอ้างอิง:{" "}
+            <span className="font-mono font-bold text-text-primary">{refId}</span>
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }

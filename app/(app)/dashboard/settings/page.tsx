@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EVENT_META, CHANNEL_LABEL, PREVIEW_VARS, applyTemplate, type Channel } from "@/lib/notifications/eventMeta";
+import { PageHero } from "@/components/ui/PageHero";
 
 type ChainUser = {
   id: string;
@@ -230,10 +231,13 @@ export default function DashboardSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        ตั้งค่าระบบ
-      </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="ตั้งค่าระบบ"
+        subtitle="เวลาทำการ วันหยุด และการตั้งค่าการแจ้งเตือน"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       {loadError && (
         <p className="mt-4 text-sm text-danger-text">{loadError}</p>
@@ -519,6 +523,7 @@ export default function DashboardSettingsPage() {
           </Button>
         </div>
       )}
+      </div>
     </div>
   );
 }

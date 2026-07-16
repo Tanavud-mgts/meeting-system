@@ -1,66 +1,93 @@
 /* ระบบจองห้องประชุมมหาวิทยาลัย — Design Tokens (CSS Custom Properties)
-   นำเข้าด้วย:  <link rel="stylesheet" href="tokens.css">  แล้วใช้ var(--token) */
+   นำเข้าด้วย:  <link rel="stylesheet" href="tokens.css">  แล้วใช้ var(--token)
+   โทน: ม่วง-ไวโอเลต × เทอร์คอย × เขียว บนพื้น lavender (อ้างอิง Claude Design ชุดใหม่) */
 
 :root {
   /* ---- Brand ---- */
-  --color-brand-primary:        #0d8a5f;
-  --color-brand-primary-strong: #0a6b48;
-  --color-brand-accent:         #2a8a86;
-  --gradient-brand: linear-gradient(135deg, #0d8a5f, #10b981);
+  --color-brand-primary:        #7c3aed;
+  --color-brand-primary-strong: #5b21b6;
+  --color-brand-deep:           #4c1d95;
+  --color-brand-accent:         #0891b2;
+  --gradient-brand:   linear-gradient(120deg, #7c3aed, #0891b2);
+  --gradient-hero:    linear-gradient(120deg, #4c1d95 0%, #7c3aed 38%, #0891b2 75%, #059669 100%);
+  --gradient-success: linear-gradient(120deg, #059669, #0891b2);
+  --gradient-danger:  linear-gradient(120deg, #dc2626, #f59e0b);
+  --gradient-bar:     linear-gradient(180deg, #7c3aed, #0891b2);
+  /* พื้นหลังหน้า — ไล่แสงอุ่น/เขียวมิ้นต์จางบนพื้น lavender */
+  --gradient-page:
+    radial-gradient(1100px 480px at 15% -10%, #ffe8c2 0%, transparent 55%),
+    radial-gradient(900px 500px at 110% 0%, #c7f0e6 0%, transparent 50%),
+    #f2effa;
 
-  /* ---- Neutral scale (cool gray-green) ---- */
+  /* ---- Neutral scale (lavender-tinted) ---- */
   --color-neutral-0:   #ffffff;
-  --color-neutral-50:  #f6f9f9;
-  --color-neutral-100: #eef2f2;
-  --color-neutral-150: #e6eeee;
-  --color-neutral-200: #e0e8e8;
-  --color-neutral-300: #d3dede;
-  --color-neutral-400: #b6c2c2;
-  --color-neutral-500: #8a989a;
-  --color-neutral-600: #5c6b6d;
-  --color-neutral-700: #33474a;
-  --color-neutral-900: #1b2b2d;
+  --color-neutral-50:  #faf8ff;
+  --color-neutral-100: #f5f1fc;
+  --color-neutral-150: #f1eafb;
+  --color-neutral-200: #eee5fb;
+  --color-neutral-300: #e6ddfa;
+  --color-neutral-400: #c3b8dd;
+  --color-neutral-500: #8a80a3;
+  --color-neutral-600: #6b6480;
+  --color-neutral-700: #4a3f66;
+  --color-neutral-900: #20182f;
 
   /* ---- Surface ---- */
-  --color-surface-page:   var(--color-neutral-100);
+  --color-surface-page:   #f2effa;
   --color-surface-card:   var(--color-neutral-0);
-  --color-surface-sunken: #f7fafa;
-  --color-surface-field:  #fbfdfd;
+  --color-surface-sunken: #faf7ff;
+  --color-surface-field:  #faf8ff;
+  --color-border-sunken:  #ecdcff;
   /* เมนู sidebar ที่กำลัง active — โทน brand จางให้ต่างจากพื้นการ์ด/เทา hover */
-  --color-nav-active-surface: #e4f3ea;
+  --color-nav-active-surface: #f1eafb;
 
   /* ---- Text ---- */
   --color-text-primary:    var(--color-neutral-900);
   --color-text-secondary:  var(--color-neutral-600);
   --color-text-muted:      var(--color-neutral-500);
   --color-text-on-primary: #ffffff;
+  /* ข้อความรองบนพื้น hero gradient */
+  --color-text-on-hero-muted: #e9d9ff;
+  --color-text-on-hero-gold:  #fde68a;
 
   /* ---- Status: success / อนุมัติแล้ว ---- */
-  --color-success-solid:   #1f9d57;
-  --color-success-accent:  #3f9e74;
-  --color-success-surface: #e4f3ea;
-  --color-success-text:    #1c6b4c;
+  --color-success-solid:   #059669;
+  --color-success-accent:  #10b981;
+  --color-success-surface: #d7f7e6;
+  --color-success-text:    #047857;
 
   /* ---- Status: warning / รออนุมัติ ---- */
-  --color-warning-accent:  #d9a93c;
-  --color-warning-surface: #fbf1da;
-  --color-warning-text:    #876217;
-  --color-warning-border:  #f0d27a;
+  --color-warning-accent:  #f59e0b;
+  --color-warning-surface: #fff1e6;
+  --color-warning-text:    #c2410c;
+  --color-warning-border:  #fbd9b8;
 
   /* ---- Status: danger / ปฏิเสธ ---- */
-  --color-danger-solid:   #d24b3e;
-  --color-danger-surface: #fdecea;
-  --color-danger-text:    #c43d2f;
-  --color-danger-border:  #f1c4bd;
+  --color-danger-solid:   #dc2626;
+  --color-danger-surface: #fde8e8;
+  --color-danger-text:    #dc2626;
+  --color-danger-border:  #f3c1bb;
+
+  /* ---- Accent เสริม (สีประจำห้อง ฯลฯ) ---- */
+  --color-accent-pink: #db2777;
+
+  /* ---- Tag / chip อุปกรณ์ (โปรเจกเตอร์ ไวท์บอร์ด ไมโครโฟน) ---- */
+  --color-tag-blue-surface:   #e8f0fb;
+  --color-tag-blue-text:      #2054a8;
+  --color-tag-orange-surface: #fdeee0;
+  --color-tag-orange-text:    #b5652f;
+  --color-tag-pink-surface:   #fce7f3;
+  --color-tag-pink-text:      #a3175e;
 
   /* ---- Typography ---- */
   --font-family-base: 'Sarabun', system-ui, sans-serif;
   --font-family-mono: ui-monospace, Menlo, monospace;
-  --font-weight-light:    300;
-  --font-weight-regular:  400;
-  --font-weight-medium:   500;
-  --font-weight-semibold: 600;
-  --font-weight-bold:     700;
+  --font-weight-light:     300;
+  --font-weight-regular:   400;
+  --font-weight-medium:    500;
+  --font-weight-semibold:  600;
+  --font-weight-bold:      700;
+  --font-weight-extrabold: 800;
   --font-size-xs:   11px;
   --font-size-sm:   13px;
   --font-size-base: 14.5px;
@@ -68,12 +95,13 @@
   --font-size-lg:   17px;
   --font-size-xl:   20px;
   --font-size-2xl:  25px;
+  --font-size-3xl:  28px;
 
   /* ---- Radius ---- */
-  --radius-sm:   8px;
-  --radius-md:   10px;
-  --radius-lg:   14px;
-  --radius-xl:   16px;
+  --radius-sm:   9px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
   --radius-pill: 999px;
 
   /* ---- Spacing ---- */
@@ -85,10 +113,12 @@
   --space-6: 24px;
   --space-8: 32px;
 
-  /* ---- Shadow ---- */
-  --shadow-card:   0 3px 14px rgba(20, 60, 64, 0.05);
-  --shadow-raised: 0 8px 24px rgba(13, 138, 95, 0.16);
-  --shadow-modal:  0 20px 50px rgba(0, 0, 0, 0.25);
+  /* ---- Shadow (เงาโทนม่วงตาม brand) ---- */
+  --shadow-card:    0 8px 22px rgba(76, 29, 149, 0.08);
+  --shadow-raised:  0 16px 40px rgba(76, 29, 149, 0.14);
+  --shadow-modal:   0 20px 50px rgba(0, 0, 0, 0.25);
+  --shadow-brand:   0 6px 16px rgba(124, 58, 237, 0.30);
+  --shadow-success: 0 8px 20px rgba(5, 150, 105, 0.32);
 
   /* ---- Transition ---- */
   /* Reference value only - components use Tailwind's built-in duration-150

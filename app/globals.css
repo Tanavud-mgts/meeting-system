@@ -3,7 +3,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #20182f;
 }
 
 @theme inline {
@@ -15,10 +15,11 @@
   /* Brand */
   --color-brand-primary:        var(--color-brand-primary);
   --color-brand-primary-strong: var(--color-brand-primary-strong);
+  --color-brand-deep:           var(--color-brand-deep);
   --color-brand-accent:         var(--color-brand-accent);
 
   /* Neutral scale — ทับ default ของ Tailwind บางขั้นโดยตั้งใจ
-     ให้ bg-neutral-500 ฯลฯ ใช้โทนเทา-เขียวของ DESIGN.md แทน default */
+     ให้ bg-neutral-500 ฯลฯ ใช้โทน lavender ของ DESIGN.md แทน default */
   --color-neutral-0:   var(--color-neutral-0);
   --color-neutral-50:  var(--color-neutral-50);
   --color-neutral-100: var(--color-neutral-100);
@@ -36,6 +37,7 @@
   --color-surface-card:   var(--color-surface-card);
   --color-surface-sunken: var(--color-surface-sunken);
   --color-surface-field:  var(--color-surface-field);
+  --color-border-sunken:  var(--color-border-sunken);
   --color-nav-active-surface: var(--color-nav-active-surface);
 
   /* Text */
@@ -43,6 +45,8 @@
   --color-text-secondary:  var(--color-text-secondary);
   --color-text-muted:      var(--color-text-muted);
   --color-text-on-primary: var(--color-text-on-primary);
+  --color-text-on-hero-muted: var(--color-text-on-hero-muted);
+  --color-text-on-hero-gold:  var(--color-text-on-hero-gold);
 
   /* Status: success */
   --color-success-solid:   var(--color-success-solid);
@@ -62,6 +66,15 @@
   --color-danger-text:    var(--color-danger-text);
   --color-danger-border:  var(--color-danger-border);
 
+  /* Accent เสริม + tag อุปกรณ์ */
+  --color-accent-pink:        var(--color-accent-pink);
+  --color-tag-blue-surface:   var(--color-tag-blue-surface);
+  --color-tag-blue-text:      var(--color-tag-blue-text);
+  --color-tag-orange-surface: var(--color-tag-orange-surface);
+  --color-tag-orange-text:    var(--color-tag-orange-text);
+  --color-tag-pink-surface:   var(--color-tag-pink-surface);
+  --color-tag-pink-text:      var(--color-tag-pink-text);
+
   /* Radius — ทับ default ของ Tailwind ให้ตรงกับ DESIGN.md */
   --radius-sm:   var(--radius-sm);
   --radius-md:   var(--radius-md);
@@ -70,9 +83,11 @@
   --radius-pill: var(--radius-pill);
 
   /* Shadow — เพิ่ม key ใหม่ ไม่ทับ default */
-  --shadow-card:   var(--shadow-card);
-  --shadow-raised: var(--shadow-raised);
-  --shadow-modal:  var(--shadow-modal);
+  --shadow-card:    var(--shadow-card);
+  --shadow-raised:  var(--shadow-raised);
+  --shadow-modal:   var(--shadow-modal);
+  --shadow-brand:   var(--shadow-brand);
+  --shadow-success: var(--shadow-success);
 
   /* Font size — ทับ default ของ Tailwind ให้ตรงกับ DESIGN.md (หน่วย px ตรงตัว) */
   --text-xs:   var(--font-size-xs);
@@ -82,6 +97,7 @@
   --text-lg:   var(--font-size-lg);
   --text-xl:   var(--font-size-xl);
   --text-2xl:  var(--font-size-2xl);
+  --text-3xl:  var(--font-size-3xl);
 
   /* Animation */
   --animate-fade-in-up: fade-in-up 0.3s ease-out;
@@ -91,6 +107,45 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* ช่องกรอกข้อมูลทุกแบบ — พื้น lavender จาง + focus ring ม่วงตามแบบ Claude Design */
+input:where([type="text"], [type="number"], [type="date"], [type="time"], [type="email"], [type="password"], [type="search"]),
+select,
+textarea {
+  background: var(--color-surface-field);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
+}
+
+/* ---- Gradient utilities (ใช้แทนการ hardcode สีในหน้า) ---- */
+.bg-grad-brand   { background-image: var(--gradient-brand); }
+.bg-grad-hero    { background-image: var(--gradient-hero); }
+.bg-grad-success { background-image: var(--gradient-success); }
+.bg-grad-danger  { background-image: var(--gradient-danger); }
+.bg-grad-bar     { background-image: var(--gradient-bar); }
+
+/* พื้นหลังของ main — lavender + แสงอุ่น/มิ้นต์จางมุมบน */
+.bg-page-wash { background: var(--gradient-page); }
+
+/* แสงขาวฟุ้งมุมขวาบนของ hero banner */
+.hero-glow {
+  background: radial-gradient(500px 300px at 85% 0%, rgba(255, 255, 255, 0.18), transparent 60%);
+}
+
+/* แท่ง gradient หน้าหัวข้อ section (แบบเดียวกับหน้า Claude Design) */
+.section-bar {
+  display: inline-block;
+  width: 8px;
+  height: 20px;
+  flex: none;
+  border-radius: 3px;
+  background-image: var(--gradient-bar);
 }
 
 @keyframes fade-in-up {

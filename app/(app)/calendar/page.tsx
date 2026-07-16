@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero } from "@/components/ui/PageHero";
 
 type ViewMode = "day" | "week" | "month";
 
@@ -411,17 +412,18 @@ export default function CalendarPage() {
     : null;
 
   return (
-    <div className="mx-auto max-w-5xl animate-fade-in-up p-6 pb-16">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-text-primary">
-          ภาพรวมการจองห้องประชุม
-        </h1>
-      </div>
+    <div className="animate-fade-in-up pb-16">
+      <PageHero
+        title="ภาพรวมการจองห้องประชุม"
+        subtitle="ดูตารางการใช้ห้องประชุมทั้งหมดแบบวัน สัปดาห์ และเดือน"
+        width="max-w-5xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-5xl px-6">
 
       {loadError && <p className="mt-4 text-sm text-danger-text">{loadError}</p>}
 
       {loading && (
-        <div className="mt-4">
+        <div>
           <Skeleton className="h-[32rem] w-full" />
         </div>
       )}
@@ -464,9 +466,9 @@ export default function CalendarPage() {
                   <button
                     key={v}
                     onClick={() => setView(v)}
-                    className={`h-[30px] cursor-pointer rounded-sm px-3.5 text-sm font-semibold ${
+                    className={`h-[30px] cursor-pointer rounded-sm px-3.5 text-sm font-bold ${
                       view === v
-                        ? "bg-brand-primary text-text-on-primary"
+                        ? "bg-grad-brand shadow-brand text-text-on-primary"
                         : "text-text-secondary"
                     }`}
                   >
@@ -778,6 +780,7 @@ export default function CalendarPage() {
           </>
         )}
       </Modal>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Badge } from "@/components/ui/Badge";
+import { PageHero } from "@/components/ui/PageHero";
 
 type HistoryEntry = {
   id: string;
@@ -74,36 +76,53 @@ export default function ApproverHistoryPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        ประวัติการทำงาน
-      </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="ประวัติการทำงาน"
+        subtitle="รายการอนุมัติและปฏิเสธที่ผ่านมาของคุณ"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl space-y-4 px-6">
 
-      {loadError && <p className="mt-4 text-sm text-danger-text">{loadError}</p>}
+      {loadError && <p className="text-sm text-danger-text">{loadError}</p>}
 
       {!loading && entries.length === 0 && !loadError && (
-        <p className="mt-4 text-sm text-text-secondary">
+        <div className="rounded-lg border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
           ยังไม่มีประวัติการทำงาน
-        </p>
+        </div>
       )}
 
       {loading && (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
         </div>
       )}
 
       {!loading && (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           {entries.map((e) => (
-            <Card key={e.id}>
-              <p className="font-medium text-text-primary">
-                {e.booking_title} ({e.booking_ref_id})
-              </p>
-              <p className="text-sm text-text-secondary">
+            <Card
+              key={e.id}
+              className={`border-l-4 ${
+                e.action === "approved"
+                  ? "border-l-success-solid"
+                  : "border-l-danger-solid"
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-bold text-text-primary">
+                  {e.booking_title}{" "}
+                  <span className="font-mono text-sm font-normal text-text-muted">
+                    {e.booking_ref_id}
+                  </span>
+                </p>
+                <Badge tone={e.action === "approved" ? "success" : "danger"}>
+                  {e.action === "approved" ? "อนุมัติ" : "ปฏิเสธ"}
+                </Badge>
+              </div>
+              <p className="mt-1.5 text-sm text-text-secondary">
                 ขั้นที่ {e.step} —{" "}
-                {e.action === "approved" ? "อนุมัติ" : "ปฏิเสธ"} —{" "}
                 {new Date(e.acted_at).toLocaleString("th-TH")}
               </p>
               {e.note && (
@@ -113,6 +132,7 @@ export default function ApproverHistoryPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

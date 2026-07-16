@@ -173,30 +173,28 @@ export default function HomePage() {
   const emptyWeek = data.weekDays.every((d) => d.count === 0);
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      {/* Header แบรนด์ */}
-      <div className="overflow-hidden rounded-lg shadow-card">
-        <div
-          className="flex items-center gap-4 p-5"
-          style={{ background: "var(--gradient-brand)" }}
-        >
+    <div className="animate-fade-in-up pb-10">
+      {/* Hero แบรนด์ */}
+      <div className="bg-grad-hero relative overflow-hidden px-6 pb-12 pt-8">
+        <div className="hero-glow pointer-events-none absolute inset-0" />
+        <div className="relative mx-auto flex max-w-2xl items-center gap-4">
           <Avatar name={data.fullName} size="lg" tone="inverse" />
           <div className="min-w-0">
-            <p className="text-sm text-text-on-primary opacity-90">
-              ยินดีต้อนรับ
-            </p>
-            <p className="truncate text-lg font-semibold text-text-on-primary">
+            <p className="text-sm text-text-on-hero-muted">ยินดีต้อนรับ</p>
+            <p className="truncate text-2xl font-extrabold tracking-tight text-text-on-primary">
               {data.fullName}
             </p>
-            <span className="mt-2 inline-block rounded-pill bg-surface-card px-2.5 py-0.5 text-xs font-semibold text-brand-primary">
+            <span className="mt-2 inline-block rounded-pill bg-white/20 px-2.5 py-0.5 text-xs font-bold text-text-on-primary">
               {ROLE_LABEL[data.role] ?? data.role}
             </span>
           </div>
         </div>
       </div>
 
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+
       {/* การ์ดสถานะของฉัน */}
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Card>
           <p className="text-sm text-text-secondary">การจองถัดไปของฉัน</p>
           {data.nextBooking ? (
@@ -233,7 +231,7 @@ export default function HomePage() {
           </p>
           <Link
             href="/booking"
-            className="mt-3 inline-block rounded-sm bg-brand-primary px-4 py-2 text-sm font-medium text-text-on-primary transition-transform duration-150 hover:scale-[1.02] hover:bg-brand-primary-strong"
+            className="bg-grad-brand shadow-brand mt-3 inline-block rounded-sm px-4 py-2 text-sm font-bold text-text-on-primary transition-transform duration-150 hover:scale-[1.02]"
           >
             จองห้องประชุม
           </Link>
@@ -256,7 +254,7 @@ export default function HomePage() {
                   ไปหน้าคำขออนุมัติ →
                 </span>
               </div>
-              <span className="text-2xl font-semibold text-warning-text">
+              <span className="text-2xl font-extrabold text-warning-text">
                 {data.waitingCount.toLocaleString("th-TH")}
               </span>
             </Link>
@@ -275,7 +273,8 @@ export default function HomePage() {
 
       {/* แถบสัปดาห์นี้ (องค์กร) */}
       <Card className="mt-4">
-        <p className="text-sm font-medium text-text-primary">
+        <p className="flex items-center gap-2.5 text-sm font-bold text-text-primary">
+          <span className="section-bar" aria-hidden="true" />
           ตารางการจองสัปดาห์นี้
         </p>
         <div className="mt-3 grid grid-cols-7 gap-1">
@@ -283,25 +282,41 @@ export default function HomePage() {
             <div
               key={i}
               className={`rounded-sm p-2 text-center ${
-                d.isToday ? "bg-nav-active-surface" : ""
+                d.isToday ? "bg-grad-brand shadow-brand" : ""
               }`}
             >
-              <p className="text-xs text-text-secondary">{d.label}</p>
+              <p
+                className={`text-xs ${
+                  d.isToday ? "text-text-on-hero-muted" : "text-text-secondary"
+                }`}
+              >
+                {d.label}
+              </p>
               <p
                 className={`text-sm ${
                   d.isToday
-                    ? "font-semibold text-text-primary"
+                    ? "font-extrabold text-text-on-primary"
                     : "text-text-primary"
                 }`}
               >
                 {d.dayOfMonth}
               </p>
               {d.count > 0 ? (
-                <p className="text-xs font-semibold text-brand-primary">
+                <p
+                  className={`text-xs font-bold ${
+                    d.isToday ? "text-text-on-hero-gold" : "text-brand-primary"
+                  }`}
+                >
                   {d.count.toLocaleString("th-TH")}
                 </p>
               ) : (
-                <p className="text-xs text-text-muted">—</p>
+                <p
+                  className={`text-xs ${
+                    d.isToday ? "text-text-on-hero-muted" : "text-text-muted"
+                  }`}
+                >
+                  —
+                </p>
               )}
             </div>
           ))}
@@ -313,11 +328,12 @@ export default function HomePage() {
         )}
         <Link
           href="/calendar"
-          className="mt-3 inline-block text-sm text-brand-primary hover:underline"
+          className="mt-3 inline-block text-sm font-bold text-brand-primary hover:underline"
         >
           ดูปฏิทินทั้งหมด →
         </Link>
       </Card>
+      </div>
     </div>
   );
 }

@@ -1,57 +1,63 @@
 {
   "$schema": "https://design-tokens.github.io/community-group/format/",
-  "$description": "ระบบจองห้องประชุมมหาวิทยาลัย — Design Tokens (W3C DTCG format)",
+  "$description": "ระบบจองห้องประชุมมหาวิทยาลัย — Design Tokens (W3C DTCG format) โทนม่วง-ไวโอเลต × เทอร์คอย × เขียว บนพื้น lavender",
 
   "color": {
     "brand": {
-      "primary":        { "$type": "color", "$value": "#0d8a5f", "$description": "สีหลัก เขียว-เทอร์คอยสด ปุ่ม/ไฮไลต์/แถบ active" },
-      "primary-strong": { "$type": "color", "$value": "#0a6b48", "$description": "เขียวเข้ม พื้นหลังเข้ม/แถบสรุป" },
-      "accent":         { "$type": "color", "$value": "#2a8a86", "$description": "teal สว่าง สำหรับ eyebrow/ลิงก์" },
-      "gradient":       { "$type": "color", "$value": "linear-gradient(135deg, #0d8a5f, #10b981)", "$description": "gradient สำหรับปุ่ม/ไฮไลต์พิเศษ" }
+      "primary":        { "$type": "color", "$value": "#7c3aed", "$description": "สีหลัก ม่วงไวโอเลต ปุ่ม/ไฮไลต์/แถบ active" },
+      "primary-strong": { "$type": "color", "$value": "#5b21b6", "$description": "ม่วงเข้ม ข้อความเน้นบนพื้นม่วงจาง" },
+      "deep":           { "$type": "color", "$value": "#4c1d95", "$description": "ม่วงลึก จุดเริ่ม gradient hero" },
+      "accent":         { "$type": "color", "$value": "#0891b2", "$description": "เทอร์คอย สำหรับลิงก์/ตัวเลขเน้น/ปลาย gradient" },
+      "gradient":         { "$type": "color", "$value": "linear-gradient(120deg, #7c3aed, #0891b2)", "$description": "gradient หลัก ปุ่ม/chip active/แถบ active" },
+      "gradient-hero":    { "$type": "color", "$value": "linear-gradient(120deg, #4c1d95 0%, #7c3aed 38%, #0891b2 75%, #059669 100%)", "$description": "แบนเนอร์หัวหน้า" },
+      "gradient-success": { "$type": "color", "$value": "linear-gradient(120deg, #059669, #0891b2)", "$description": "ปุ่มอนุมัติ/ยืนยัน" },
+      "gradient-danger":  { "$type": "color", "$value": "linear-gradient(120deg, #dc2626, #f59e0b)", "$description": "ปุ่มยืนยันการปฏิเสธ" }
     },
     "neutral": {
       "0":   { "$type": "color", "$value": "#ffffff" },
-      "50":  { "$type": "color", "$value": "#f6f9f9" },
-      "100": { "$type": "color", "$value": "#eef2f2" },
-      "150": { "$type": "color", "$value": "#e6eeee" },
-      "200": { "$type": "color", "$value": "#e0e8e8" },
-      "300": { "$type": "color", "$value": "#d3dede" },
-      "400": { "$type": "color", "$value": "#b6c2c2" },
-      "500": { "$type": "color", "$value": "#8a989a" },
-      "600": { "$type": "color", "$value": "#5c6b6d" },
-      "700": { "$type": "color", "$value": "#33474a" },
-      "900": { "$type": "color", "$value": "#1b2b2d" }
+      "50":  { "$type": "color", "$value": "#faf8ff" },
+      "100": { "$type": "color", "$value": "#f5f1fc" },
+      "150": { "$type": "color", "$value": "#f1eafb" },
+      "200": { "$type": "color", "$value": "#eee5fb" },
+      "300": { "$type": "color", "$value": "#e6ddfa" },
+      "400": { "$type": "color", "$value": "#c3b8dd" },
+      "500": { "$type": "color", "$value": "#8a80a3" },
+      "600": { "$type": "color", "$value": "#6b6480" },
+      "700": { "$type": "color", "$value": "#4a3f66" },
+      "900": { "$type": "color", "$value": "#20182f" }
     },
     "surface": {
-      "page":   { "$type": "color", "$value": "{color.neutral.100}", "$description": "พื้นหลังหน้า" },
+      "page":   { "$type": "color", "$value": "#f2effa", "$description": "พื้นหลังหน้า (ใช้คู่ radial gradient อุ่น/มิ้นต์)" },
       "card":   { "$type": "color", "$value": "{color.neutral.0}",   "$description": "พื้นการ์ด" },
-      "sunken": { "$type": "color", "$value": "#f7fafa", "$description": "กล่องย่อยในการ์ด เช่น approval chain" },
-      "field":  { "$type": "color", "$value": "#fbfdfd", "$description": "พื้นช่องกรอก/ดรอปดาวน์" }
+      "sunken": { "$type": "color", "$value": "#faf7ff", "$description": "กล่องย่อยในการ์ด เช่น approval chain (ขอบ #ecdcff)" },
+      "field":  { "$type": "color", "$value": "#faf8ff", "$description": "พื้นช่องกรอก/ดรอปดาวน์" }
     },
     "text": {
       "primary":    { "$type": "color", "$value": "{color.neutral.900}" },
       "secondary":  { "$type": "color", "$value": "{color.neutral.600}" },
       "muted":      { "$type": "color", "$value": "{color.neutral.500}" },
-      "on-primary": { "$type": "color", "$value": "#ffffff" }
+      "on-primary": { "$type": "color", "$value": "#ffffff" },
+      "on-hero-muted": { "$type": "color", "$value": "#e9d9ff", "$description": "ข้อความรองบนพื้น hero gradient" },
+      "on-hero-gold":  { "$type": "color", "$value": "#fde68a", "$description": "ตัวเลข/ข้อความเน้นบนพื้น hero gradient" }
     },
     "status": {
       "success": {
-        "solid":   { "$type": "color", "$value": "#1f9d57", "$description": "ปุ่มอนุมัติ" },
-        "accent":  { "$type": "color", "$value": "#3f9e74", "$description": "ขอบ/จุดสถานะ อนุมัติแล้ว" },
-        "surface": { "$type": "color", "$value": "#e4f3ea" },
-        "text":    { "$type": "color", "$value": "#1c6b4c" }
+        "solid":   { "$type": "color", "$value": "#059669", "$description": "ปุ่มอนุมัติ/แถบ accent" },
+        "accent":  { "$type": "color", "$value": "#10b981", "$description": "ขอบ/จุดสถานะ อนุมัติแล้ว" },
+        "surface": { "$type": "color", "$value": "#d7f7e6" },
+        "text":    { "$type": "color", "$value": "#047857" }
       },
       "warning": {
-        "accent":  { "$type": "color", "$value": "#d9a93c", "$description": "รออนุมัติ/รอดำเนินการ" },
-        "surface": { "$type": "color", "$value": "#fbf1da" },
-        "text":    { "$type": "color", "$value": "#876217" },
-        "border":  { "$type": "color", "$value": "#f0d27a", "$description": "ขอบเตือนการ์ดที่รอนานเกินกำหนด" }
+        "accent":  { "$type": "color", "$value": "#f59e0b", "$description": "รออนุมัติ/รอดำเนินการ" },
+        "surface": { "$type": "color", "$value": "#fff1e6" },
+        "text":    { "$type": "color", "$value": "#c2410c" },
+        "border":  { "$type": "color", "$value": "#fbd9b8", "$description": "ขอบเตือนการ์ดที่รอนานเกินกำหนด" }
       },
       "danger": {
-        "solid":   { "$type": "color", "$value": "#d24b3e", "$description": "ปุ่มยืนยันปฏิเสธ" },
-        "surface": { "$type": "color", "$value": "#fdecea", "$description": "พื้นปุ่มปฏิเสธ" },
-        "text":    { "$type": "color", "$value": "#c43d2f" },
-        "border":  { "$type": "color", "$value": "#f1c4bd" }
+        "solid":   { "$type": "color", "$value": "#dc2626", "$description": "สถานะปฏิเสธ/ยกเลิก" },
+        "surface": { "$type": "color", "$value": "#fde8e8", "$description": "พื้น badge ปฏิเสธ" },
+        "text":    { "$type": "color", "$value": "#dc2626" },
+        "border":  { "$type": "color", "$value": "#f3c1bb" }
       }
     }
   },
@@ -62,11 +68,12 @@
       "mono": { "$type": "fontFamily", "$value": ["ui-monospace", "Menlo", "monospace"], "$description": "รหัสอ้างอิง" }
     },
     "weight": {
-      "light":    { "$type": "fontWeight", "$value": 300 },
-      "regular":  { "$type": "fontWeight", "$value": 400 },
-      "medium":   { "$type": "fontWeight", "$value": 500 },
-      "semibold": { "$type": "fontWeight", "$value": 600 },
-      "bold":     { "$type": "fontWeight", "$value": 700 }
+      "light":     { "$type": "fontWeight", "$value": 300 },
+      "regular":   { "$type": "fontWeight", "$value": 400 },
+      "medium":    { "$type": "fontWeight", "$value": 500 },
+      "semibold":  { "$type": "fontWeight", "$value": 600 },
+      "bold":      { "$type": "fontWeight", "$value": 700 },
+      "extrabold": { "$type": "fontWeight", "$value": 800, "$description": "หัวเรื่องหน้า/ปุ่มเน้น" }
     },
     "size": {
       "xs":    { "$type": "dimension", "$value": "11px" },
@@ -75,15 +82,16 @@
       "md":    { "$type": "dimension", "$value": "15px" },
       "lg":    { "$type": "dimension", "$value": "17px", "$description": "หัวข้อ section" },
       "xl":    { "$type": "dimension", "$value": "20px", "$description": "หัวข้อ dialog" },
-      "2xl":   { "$type": "dimension", "$value": "25px", "$description": "หัวเรื่องหน้า" }
+      "2xl":   { "$type": "dimension", "$value": "25px", "$description": "หัวเรื่องรอง" },
+      "3xl":   { "$type": "dimension", "$value": "28px", "$description": "หัวเรื่องหน้าใน hero banner" }
     }
   },
 
   "radius": {
-    "sm":   { "$type": "dimension", "$value": "8px" },
-    "md":   { "$type": "dimension", "$value": "10px" },
-    "lg":   { "$type": "dimension", "$value": "14px", "$description": "การ์ด" },
-    "xl":   { "$type": "dimension", "$value": "16px", "$description": "dialog/การ์ดใหญ่" },
+    "sm":   { "$type": "dimension", "$value": "9px", "$description": "ปุ่ม/input" },
+    "md":   { "$type": "dimension", "$value": "12px", "$description": "กล่องย่อย" },
+    "lg":   { "$type": "dimension", "$value": "16px", "$description": "การ์ด/dialog" },
+    "xl":   { "$type": "dimension", "$value": "20px", "$description": "การ์ดใหญ่" },
     "pill": { "$type": "dimension", "$value": "999px", "$description": "badge/chip" }
   },
 
@@ -98,8 +106,10 @@
   },
 
   "shadow": {
-    "card":  { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "3px",  "blur": "14px", "spread": "0", "color": "rgba(20,60,64,0.05)" } },
-    "raised":{ "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "8px",  "blur": "24px", "spread": "0", "color": "rgba(13,138,95,0.16)" } },
-    "modal": { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "20px", "blur": "50px", "spread": "0", "color": "rgba(0,0,0,0.25)" } }
+    "card":    { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "8px",  "blur": "22px", "spread": "0", "color": "rgba(76,29,149,0.08)" } },
+    "raised":  { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "16px", "blur": "40px", "spread": "0", "color": "rgba(76,29,149,0.14)" } },
+    "modal":   { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "20px", "blur": "50px", "spread": "0", "color": "rgba(0,0,0,0.25)" } },
+    "brand":   { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "6px",  "blur": "16px", "spread": "0", "color": "rgba(124,58,237,0.30)" } },
+    "success": { "$type": "shadow", "$value": { "offsetX": "0", "offsetY": "8px",  "blur": "20px", "spread": "0", "color": "rgba(5,150,105,0.32)" } }
   }
 }

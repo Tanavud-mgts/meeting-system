@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero } from "@/components/ui/PageHero";
 
 type BookingRow = {
   id: string;
@@ -144,10 +145,13 @@ export default function ProfileBookingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        ประวัติการจองของฉัน
-      </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="ประวัติการจองของฉัน"
+        subtitle="รายการจองทั้งหมดของคุณ"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       {loadError && (
         <p className="mt-4 text-sm text-danger-text">{loadError}</p>
@@ -237,6 +241,7 @@ export default function ProfileBookingsPage() {
           </>
         )}
       </Modal>
+      </div>
     </div>
   );
 }

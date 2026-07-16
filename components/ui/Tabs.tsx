@@ -19,8 +19,8 @@ export function Tabs({ tabs }: { tabs: Tab[] }) {
               href={tab.href}
               className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm transition-colors ${
                 active
-                  ? "border-brand-primary font-medium text-brand-primary"
-                  : "border-transparent text-text-secondary hover:text-text-primary"
+                  ? "border-brand-primary font-bold text-brand-primary"
+                  : "border-transparent font-medium text-text-secondary hover:text-text-primary"
               }`}
             >
               {tab.label}

@@ -33,7 +33,7 @@ export default async function AppLayout({
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
       <NotificationBell />
       <AppNav items={sidebarItems} />
-      <main className="flex-1 bg-surface-page pt-14 pb-20 md:pt-0 md:pb-0">
+      <main className="bg-page-wash flex-1 pt-14 pb-20 md:pt-0 md:pb-0">
         <PageTabs role={role} />
         {children}
       </main>

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { PageHero } from "@/components/ui/PageHero";
 
 type ServiceName =
   | "make_com"
@@ -147,10 +148,13 @@ export default function DashboardIntegrationsPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        Integration Health
-      </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="Integration Health"
+        subtitle="สถานะการเชื่อมต่อบริการภายนอกและโควตาการแจ้งเตือน"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       {quotaError && (
         <p className="mt-4 text-sm text-danger-text">{quotaError}</p>
@@ -251,6 +255,7 @@ export default function DashboardIntegrationsPage() {
         >
           ถัดไป
         </Button>
+      </div>
       </div>
     </div>
   );

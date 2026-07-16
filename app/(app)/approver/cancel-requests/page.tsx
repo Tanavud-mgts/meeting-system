@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero } from "@/components/ui/PageHero";
 
 type CancelRequestRow = {
   id: string;
@@ -101,59 +102,64 @@ export default function CancelRequestsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        คำขอยกเลิกการจอง
-      </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="คำขอยกเลิกการจอง"
+        subtitle="พิจารณาคำขอยกเลิกการจองที่อนุมัติแล้ว"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl space-y-4 px-6">
 
       {loadError && (
-        <p className="mt-4 text-sm text-danger-text">{loadError}</p>
+        <p className="text-sm text-danger-text">{loadError}</p>
       )}
       {actionError && (
-        <p className="mt-4 text-sm text-danger-text">{actionError}</p>
+        <p className="text-sm text-danger-text">{actionError}</p>
       )}
 
       {!loading && requests.length === 0 && !loadError && (
-        <p className="mt-4 text-sm text-text-secondary">
+        <div className="rounded-lg border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
           ไม่มีคำขอยกเลิกในขณะนี้
-        </p>
+        </div>
       )}
 
       {loading && (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
         </div>
       )}
 
       {!loading && (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           {requests.map((r) => (
-            <Card key={r.id}>
-              <p className="font-medium text-text-primary">{r.title}</p>
-              <p className="text-sm text-text-secondary">
-                {r.ref_id} — ห้อง {r.room_name} — ผู้จอง {r.requester_name}
+            <Card key={r.id} className="border-l-4 border-l-danger-solid">
+              <p className="font-bold text-text-primary">{r.title}</p>
+              <p className="mt-1 text-sm text-text-secondary">
+                <span className="font-mono">{r.ref_id}</span> — ห้อง{" "}
+                {r.room_name} — ผู้จอง {r.requester_name}
               </p>
-              <p className="mt-2 text-sm text-text-primary">
+              <p className="mt-2.5 rounded-md border border-border-sunken bg-surface-sunken px-3 py-2 text-sm text-text-primary">
                 เหตุผล: {r.cancellation_reason ?? "-"}
               </p>
-              <div className="mt-3 flex gap-3">
-                <Button
-                  variant="primary"
-                  className="bg-success-solid hover:bg-success-solid"
-                  onClick={() =>
-                    setConfirmTarget({ booking: r, decision: "approve" })
-                  }
-                >
-                  อนุมัติการยกเลิก
-                </Button>
+              <div className="mt-4 flex gap-2.5">
                 <Button
                   variant="danger"
+                  className="flex-1"
                   onClick={() =>
                     setConfirmTarget({ booking: r, decision: "reject" })
                   }
                 >
                   ปฏิเสธคำขอ
+                </Button>
+                <Button
+                  variant="success"
+                  className="flex-1"
+                  onClick={() =>
+                    setConfirmTarget({ booking: r, decision: "approve" })
+                  }
+                >
+                  อนุมัติการยกเลิก
                 </Button>
               </div>
             </Card>
@@ -173,17 +179,29 @@ export default function CancelRequestsPage() {
             <p className="mt-2 text-sm text-text-secondary">
               {confirmTarget.booking.title} ({confirmTarget.booking.ref_id})
             </p>
-            <div className="mt-4 flex gap-3">
-              <Button variant="secondary" onClick={() => setConfirmTarget(null)}>
+            <div className="mt-4 flex gap-2.5">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setConfirmTarget(null)}
+              >
                 ยกเลิก
               </Button>
-              <Button onClick={handleConfirm} disabled={submitting}>
+              <Button
+                variant={
+                  confirmTarget.decision === "approve" ? "success" : "dangerSolid"
+                }
+                className="flex-1"
+                onClick={handleConfirm}
+                disabled={submitting}
+              >
                 {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
               </Button>
             </div>
           </>
         )}
       </Modal>
+      </div>
     </div>
   );
 }

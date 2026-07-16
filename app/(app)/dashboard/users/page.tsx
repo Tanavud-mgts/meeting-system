@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
+import { PageHero } from "@/components/ui/PageHero";
 
 type UserRow = {
   id: string;
@@ -149,10 +150,13 @@ export default function DashboardUsersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        จัดการผู้ใช้
-      </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="จัดการผู้ใช้"
+        subtitle="กำหนดบทบาทและสิทธิ์ผู้ใช้งานในระบบ"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       {loadError && (
         <p className="mt-4 text-sm text-danger-text">{loadError}</p>
@@ -261,6 +265,7 @@ export default function DashboardUsersPage() {
           </>
         )}
       </Modal>
+      </div>
     </div>
   );
 }

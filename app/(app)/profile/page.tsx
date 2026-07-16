@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
+import { PageHero } from "@/components/ui/PageHero";
 
 type Profile = {
   full_name: string;
@@ -270,8 +271,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">โปรไฟล์ของฉัน</h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="โปรไฟล์ของฉัน"
+        subtitle="ข้อมูลบัญชีและการเชื่อมต่อการแจ้งเตือน"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       {loadError && <p className="mt-4 text-sm text-danger-text">{loadError}</p>}
 
@@ -285,20 +291,17 @@ export default function ProfilePage() {
       {!loading && profile && (
         <>
           {/* Gradient header */}
-          <div className="mt-4 overflow-hidden rounded-lg shadow-card">
-            <div
-              className="flex items-center gap-4 p-5"
-              style={{ background: "var(--gradient-brand)" }}
-            >
+          <div className="overflow-hidden rounded-lg shadow-card">
+            <div className="bg-grad-brand flex items-center gap-4 p-5">
               <Avatar name={profile.full_name} size="lg" tone="inverse" />
               <div className="min-w-0">
-                <p className="truncate text-lg font-semibold text-text-on-primary">
+                <p className="truncate text-lg font-extrabold text-text-on-primary">
                   {profile.full_name}
                 </p>
-                <p className="truncate text-sm text-text-on-primary opacity-90">
+                <p className="truncate text-sm text-text-on-hero-muted">
                   {profile.email}
                 </p>
-                <span className="mt-2 inline-block rounded-pill bg-surface-card px-2.5 py-0.5 text-xs font-semibold text-brand-primary">
+                <span className="mt-2 inline-block rounded-pill bg-white/20 px-2.5 py-0.5 text-xs font-bold text-text-on-primary">
                   {ROLE_LABEL[profile.role] ?? profile.role}
                 </span>
               </div>
@@ -529,6 +532,7 @@ export default function ProfilePage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero } from "@/components/ui/PageHero";
 
 type Stats = {
   bookingPending: number;
@@ -201,11 +201,17 @@ export default function DashboardOverviewPage() {
     };
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-semibold text-text-primary">ภาพรวมระบบ</h1>
-        <Badge tone="neutral">ผู้ดูแลระบบ</Badge>
-      </div>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="ภาพรวมระบบ"
+        subtitle="สถิติการใช้งานและสถานะโดยรวมของระบบ"
+        width="max-w-2xl"
+      >
+        <span className="mt-3 inline-block rounded-pill bg-white/20 px-2.5 py-0.5 text-xs font-bold text-text-on-primary">
+          ผู้ดูแลระบบ
+        </span>
+      </PageHero>
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       {loadError && (
         <p className="mt-4 text-sm text-danger-text">{loadError}</p>
@@ -296,6 +302,7 @@ export default function DashboardOverviewPage() {
           </section>
         </>
       )}
+      </div>
     </div>
   );
 }

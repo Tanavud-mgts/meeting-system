@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero } from "@/components/ui/PageHero";
 
 type BookingRow = {
   id: string;
@@ -181,10 +182,13 @@ export default function DashboardBookingsPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        การจองทั้งหมด
-      </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="การจองทั้งหมด"
+        subtitle="รายการจองทุกสถานะในระบบ"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       <div className="mt-4">
         <select
@@ -301,6 +305,7 @@ export default function DashboardBookingsPage() {
           </>
         )}
       </Modal>
+      </div>
     </div>
   );
 }

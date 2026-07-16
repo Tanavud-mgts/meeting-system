@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero } from "@/components/ui/PageHero";
 
 type ActivityRow = {
   id: string;
@@ -95,10 +96,13 @@ export default function DashboardActivityPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">
-        ประวัติการทำงานรวม
-      </h1>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="ประวัติการทำงานรวม"
+        subtitle="บันทึกการทำงานทั้งหมดในระบบ"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       <div className="mt-4">
         <select
@@ -172,6 +176,7 @@ export default function DashboardActivityPage() {
         >
           ถัดไป
         </Button>
+      </div>
       </div>
     </div>
   );

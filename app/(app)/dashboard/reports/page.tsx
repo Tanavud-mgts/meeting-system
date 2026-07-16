@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHero } from "@/components/ui/PageHero";
 
 type CountRow = { label: string; count: number };
 
@@ -90,11 +91,13 @@ export default function ReportsPage() {
     month === 0 ? `ปี ${year}` : `${MONTH_LABEL[month]} ${year}`;
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in-up p-6">
-      <h1 className="text-2xl font-semibold text-text-primary">รายงาน</h1>
-      <p className="mt-1 text-sm text-text-secondary">
-        สรุปการใช้ห้องและการจองตามหน่วยงาน (นับเฉพาะการจองที่อนุมัติแล้ว)
-      </p>
+    <div className="animate-fade-in-up pb-10">
+      <PageHero
+        title="รายงาน"
+        subtitle="สรุปการใช้ห้องและการจองตามหน่วยงาน (นับเฉพาะการจองที่อนุมัติแล้ว)"
+        width="max-w-2xl"
+      />
+      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
 
       <div className="mt-4 flex flex-wrap gap-3">
         <label className="flex flex-col gap-1 text-sm text-text-secondary">
@@ -210,6 +213,7 @@ export default function ReportsPage() {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }
