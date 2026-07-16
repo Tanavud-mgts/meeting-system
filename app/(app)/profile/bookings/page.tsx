@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EditorialCard } from "@/components/ui/EditorialCard";
+import { FieldTable } from "@/components/ui/FieldTable";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 
 type BookingRow = {
   id: string;
@@ -40,6 +41,33 @@ const STATUS_TONE: Record<
   cancelled: "neutral",
   cancelled_by_admin: "neutral",
 };
+
+const STATUS_ACCENT: Record<
+  string,
+  "warning" | "success" | "danger" | "none"
+> = {
+  pending: "warning",
+  approved: "success",
+  cancel_requested: "warning",
+  rejected: "danger",
+  cancelled: "none",
+  cancelled_by_admin: "none",
+};
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function ProfileBookingsPage() {
   const [bookings, setBookings] = useState<BookingRow[]>([]);
@@ -146,101 +174,125 @@ export default function ProfileBookingsPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="ประวัติการจองของฉัน"
         subtitle="รายการจองทั้งหมดของคุณ"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
-
-      {loadError && (
-        <p className="mt-4 text-sm text-danger-text">{loadError}</p>
-      )}
-      {actionError && (
-        <p className="mt-4 text-sm text-danger-text">{actionError}</p>
-      )}
-
-      {!loading && bookings.length === 0 && !loadError && (
-        <p className="mt-4 text-sm text-text-secondary">
-          ยังไม่มีประวัติการจอง
-        </p>
-      )}
-
-      {loading && (
-        <div className="mt-4 space-y-3">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-        </div>
-      )}
-
-      {!loading && (
-        <div className="mt-4 space-y-3">
-          {bookings.map((b) => (
-            <Card key={b.id}>
-              <p className="font-medium text-text-primary">{b.title}</p>
-              <p className="text-sm text-text-secondary">
-                {b.ref_id} — ห้อง {b.room_name}
-              </p>
-              <div className="mt-1">
-                <Badge tone={STATUS_TONE[b.final_status] ?? "neutral"}>
-                  {STATUS_LABEL[b.final_status] ?? b.final_status}
-                </Badge>
-              </div>
-              {b.final_status === "pending" && (
-                <Button
-                  variant="danger"
-                  onClick={() => openCancelDialog(b)}
-                  className="mt-3"
-                >
-                  ยกเลิกการจอง
-                </Button>
-              )}
-              {b.final_status === "approved" && (
-                <Button
-                  variant="danger"
-                  onClick={() => openCancelDialog(b)}
-                  className="mt-3"
-                >
-                  ขอยกเลิกการจอง
-                </Button>
-              )}
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <Modal open={cancelTarget !== null} onClose={() => setCancelTarget(null)}>
-        {cancelTarget && (
-          <>
-            <p className="text-lg font-semibold text-text-primary">
-              {cancelTarget.final_status === "pending"
-                ? "ยืนยันการยกเลิกการจอง"
-                : "ยืนยันการส่งคำขอยกเลิก"}
-            </p>
-            <p className="mt-2 text-sm text-text-secondary">
-              {cancelTarget.title} ({cancelTarget.ref_id})
-            </p>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="กรุณาระบุเหตุผลการยกเลิก"
-              rows={3}
-              className="mt-3 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
-            />
-            {reasonError && (
-              <p className="mt-1 text-sm text-danger-text">{reasonError}</p>
-            )}
-            <div className="mt-4 flex gap-3">
-              <Button variant="secondary" onClick={() => setCancelTarget(null)}>
-                ปิด
-              </Button>
-              <Button onClick={handleConfirmCancel} disabled={submitting}>
-                {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
-              </Button>
-            </div>
-          </>
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
+        {loadError && <p className="text-sm text-danger-text">{loadError}</p>}
+        {actionError && (
+          <p className="text-sm text-danger-text">{actionError}</p>
         )}
-      </Modal>
+
+        {!loading && bookings.length === 0 && !loadError && (
+          <div className="rounded-[2px] border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
+            ยังไม่มีประวัติการจอง
+          </div>
+        )}
+
+        {loading && (
+          <div className="space-y-3">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        )}
+
+        {!loading && (
+          <div className="space-y-4">
+            {bookings.map((b) => {
+              const cancellable =
+                b.final_status === "pending" || b.final_status === "approved";
+              return (
+                <EditorialCard
+                  key={b.id}
+                  accent={STATUS_ACCENT[b.final_status] ?? "none"}
+                >
+                  <EditorialCard.Section>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-lg font-bold text-text-primary">
+                          {b.title}
+                        </p>
+                        <StatusMarker
+                          tone={STATUS_TONE[b.final_status] ?? "neutral"}
+                        >
+                          {STATUS_LABEL[b.final_status] ?? b.final_status}
+                        </StatusMarker>
+                      </div>
+                      <span className="font-mono text-xs text-text-muted">
+                        {b.ref_id}
+                      </span>
+                    </div>
+                  </EditorialCard.Section>
+
+                  <EditorialCard.Section className="!py-0">
+                    <FieldTable
+                      rows={[
+                        { label: "ห้อง", value: b.room_name },
+                        { label: "วันที่", value: fmtDate(b.start_time) },
+                        {
+                          label: "เวลา",
+                          value: `${fmtTime(b.start_time)}–${fmtTime(b.end_time)} น.`,
+                          mono: true,
+                        },
+                      ]}
+                    />
+                  </EditorialCard.Section>
+
+                  {cancellable && (
+                    <EditorialCard.Section>
+                      <Button
+                        variant="danger"
+                        onClick={() => openCancelDialog(b)}
+                      >
+                        {b.final_status === "pending"
+                          ? "ยกเลิกการจอง"
+                          : "ขอยกเลิกการจอง"}
+                      </Button>
+                    </EditorialCard.Section>
+                  )}
+                </EditorialCard>
+              );
+            })}
+          </div>
+        )}
+
+        <Modal open={cancelTarget !== null} onClose={() => setCancelTarget(null)}>
+          {cancelTarget && (
+            <>
+              <p className="text-lg font-extrabold text-text-primary">
+                {cancelTarget.final_status === "pending"
+                  ? "ยืนยันการยกเลิกการจอง"
+                  : "ยืนยันการส่งคำขอยกเลิก"}
+              </p>
+              <p className="mt-2 text-sm text-text-secondary">
+                {cancelTarget.title}{" "}
+                <span className="font-mono text-text-muted">
+                  ({cancelTarget.ref_id})
+                </span>
+              </p>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="กรุณาระบุเหตุผลการยกเลิก"
+                rows={3}
+                className="mt-3 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+              />
+              {reasonError && (
+                <p className="mt-1 text-sm text-danger-text">{reasonError}</p>
+              )}
+              <div className="mt-4 flex gap-3">
+                <Button variant="secondary" onClick={() => setCancelTarget(null)}>
+                  ปิด
+                </Button>
+                <Button onClick={handleConfirmCancel} disabled={submitting}>
+                  {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
+                </Button>
+              </div>
+            </>
+          )}
+        </Modal>
       </div>
     </div>
   );
