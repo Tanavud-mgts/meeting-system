@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionTitle } from "@/components/ui/PageHero";
 
 type Stats = {
   bookingPending: number;
@@ -37,16 +37,16 @@ function StatCard({
   loading: boolean;
 }) {
   return (
-    <Card padding="p-4">
+    <div className="rounded-[2px] border border-neutral-200 bg-surface-card p-4">
       <p className="text-sm text-text-secondary">{label}</p>
       {loading ? (
         <Skeleton className="mt-1 h-7 w-10" />
       ) : (
-        <p className="text-xl font-semibold text-text-primary">
+        <p className="mt-1 font-mono text-xl font-bold text-text-primary">
           {formatCount(value)}
         </p>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -66,7 +66,7 @@ function HighlightCard({
   return (
     <Link
       href={href}
-      className="flex flex-col gap-0.5 rounded-lg border border-warning-border bg-warning-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised"
+      className="flex flex-col gap-1 rounded-[2px] border border-l-[3px] border-warning-border border-l-warning-accent bg-warning-surface p-5 transition-colors hover:bg-warning-surface/70"
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm text-text-secondary">{label}</span>
@@ -75,7 +75,7 @@ function HighlightCard({
       {loading ? (
         <Skeleton className="mt-1 h-8 w-9 bg-warning-border/40" />
       ) : (
-        <span className="text-2xl font-semibold text-warning-text">
+        <span className="font-mono text-2xl font-bold text-warning-text">
           {formatCount(value)}
         </span>
       )}
@@ -202,24 +202,22 @@ export default function DashboardOverviewPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="ภาพรวมระบบ"
         subtitle="สถิติการใช้งานและสถานะโดยรวมของระบบ"
         width="max-w-2xl"
       >
-        <span className="mt-3 inline-block rounded-pill bg-white/20 px-2.5 py-0.5 text-xs font-bold text-text-on-primary">
+        <span className="mt-3 inline-block rounded-[2px] bg-neutral-150 px-2.5 py-0.5 text-xs font-bold text-brand-primary-strong">
           ผู้ดูแลระบบ
         </span>
-      </PageHero>
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      </PageHeader>
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
 
-      {loadError && (
-        <p className="mt-4 text-sm text-danger-text">{loadError}</p>
-      )}
+      {loadError && <p className="text-sm text-danger-text">{loadError}</p>}
 
       {!loadError && (
         <>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <HighlightCard
               href="/approver"
               label="รอ Admin อนุมัติ"
@@ -237,8 +235,8 @@ export default function DashboardOverviewPage() {
           </div>
 
           <section className="mt-6">
-            <p className="font-medium text-text-primary">การจอง</p>
-            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <SectionTitle>การจอง</SectionTitle>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
               <StatCard
                 label="รออนุมัติ"
                 value={s.bookingPending}
@@ -268,8 +266,8 @@ export default function DashboardOverviewPage() {
           </section>
 
           <section className="mt-6">
-            <p className="font-medium text-text-primary">ห้องประชุม</p>
-            <div className="mt-2 grid grid-cols-3 gap-3">
+            <SectionTitle>ห้องประชุม</SectionTitle>
+            <div className="mt-3 grid grid-cols-3 gap-3">
               <StatCard label="ว่าง" value={s.roomAvailable} loading={loading} />
               <StatCard label="ไม่ว่าง" value={s.roomBusy} loading={loading} />
               <StatCard
@@ -281,8 +279,8 @@ export default function DashboardOverviewPage() {
           </section>
 
           <section className="mt-6">
-            <p className="font-medium text-text-primary">ผู้ใช้งาน</p>
-            <div className="mt-2 grid grid-cols-3 gap-3">
+            <SectionTitle>ผู้ใช้งาน</SectionTitle>
+            <div className="mt-3 grid grid-cols-3 gap-3">
               <StatCard
                 label="ผู้ใช้ทั่วไป"
                 value={s.userCount}
