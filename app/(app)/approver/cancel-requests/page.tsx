@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EditorialCard } from "@/components/ui/EditorialCard";
+import { FieldTable } from "@/components/ui/FieldTable";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 
 type CancelRequestRow = {
   id: string;
@@ -103,104 +105,140 @@ export default function CancelRequestsPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="คำขอยกเลิกการจอง"
         subtitle="พิจารณาคำขอยกเลิกการจองที่อนุมัติแล้ว"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl space-y-4 px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl space-y-4 px-6">
+        {loadError && <p className="text-sm text-danger-text">{loadError}</p>}
+        {actionError && (
+          <p className="text-sm text-danger-text">{actionError}</p>
+        )}
 
-      {loadError && (
-        <p className="text-sm text-danger-text">{loadError}</p>
-      )}
-      {actionError && (
-        <p className="text-sm text-danger-text">{actionError}</p>
-      )}
+        {!loading && requests.length === 0 && !loadError && (
+          <div className="rounded-[2px] border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
+            ไม่มีคำขอยกเลิกในขณะนี้
+          </div>
+        )}
 
-      {!loading && requests.length === 0 && !loadError && (
-        <div className="rounded-lg border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
-          ไม่มีคำขอยกเลิกในขณะนี้
-        </div>
-      )}
+        {loading && (
+          <div className="space-y-3">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        )}
 
-      {loading && (
-        <div className="space-y-3">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-        </div>
-      )}
+        {!loading && (
+          <div className="space-y-4">
+            {requests.map((r) => (
+              <EditorialCard key={r.id} accent="danger">
+                <EditorialCard.Section>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-lg font-bold text-text-primary">
+                        {r.title}
+                      </p>
+                      <StatusMarker tone="warning">
+                        รอพิจารณายกเลิก
+                      </StatusMarker>
+                    </div>
+                    <span className="font-mono text-xs text-text-muted">
+                      {r.ref_id}
+                    </span>
+                  </div>
+                </EditorialCard.Section>
 
-      {!loading && (
-        <div className="space-y-3">
-          {requests.map((r) => (
-            <Card key={r.id} className="border-l-4 border-l-danger-solid">
-              <p className="font-bold text-text-primary">{r.title}</p>
-              <p className="mt-1 text-sm text-text-secondary">
-                <span className="font-mono">{r.ref_id}</span> — ห้อง{" "}
-                {r.room_name} — ผู้จอง {r.requester_name}
+                <EditorialCard.Section className="!py-0">
+                  <FieldTable
+                    rows={[
+                      { label: "ห้อง", value: r.room_name },
+                      { label: "ผู้จอง", value: r.requester_name },
+                    ]}
+                  />
+                </EditorialCard.Section>
+
+                <EditorialCard.Section>
+                  <p className="mb-1 text-xs font-bold tracking-wider text-text-muted">
+                    เหตุผลการยกเลิก
+                  </p>
+                  <p className="text-sm text-text-primary">
+                    {r.cancellation_reason ?? "-"}
+                  </p>
+                </EditorialCard.Section>
+
+                <div className="flex border-t border-neutral-300">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setConfirmTarget({ booking: r, decision: "reject" })
+                    }
+                    className="flex-1 cursor-pointer border-r border-neutral-200 py-3 text-sm font-bold text-warning-text transition-colors hover:bg-warning-surface"
+                  >
+                    ปฏิเสธคำขอ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setConfirmTarget({ booking: r, decision: "approve" })
+                    }
+                    className="bg-grad-success flex-1 cursor-pointer py-3 text-sm font-bold text-text-on-primary transition-transform hover:scale-[1.01]"
+                  >
+                    อนุมัติการยกเลิก
+                  </button>
+                </div>
+              </EditorialCard>
+            ))}
+          </div>
+        )}
+
+        <Modal open={confirmTarget !== null} onClose={() => setConfirmTarget(null)}>
+          {confirmTarget && (
+            <div className="text-center">
+              <div
+                className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full text-2xl font-extrabold text-text-on-primary ${
+                  confirmTarget.decision === "approve"
+                    ? "bg-grad-success shadow-success"
+                    : "bg-grad-danger"
+                }`}
+              >
+                {confirmTarget.decision === "approve" ? "✓" : "✕"}
+              </div>
+              <p className="mt-4 text-xl font-extrabold text-text-primary">
+                ยืนยันการ
+                {confirmTarget.decision === "approve"
+                  ? "อนุมัติการยกเลิก"
+                  : "ปฏิเสธคำขอ"}
               </p>
-              <p className="mt-2.5 rounded-md border border-border-sunken bg-surface-sunken px-3 py-2 text-sm text-text-primary">
-                เหตุผล: {r.cancellation_reason ?? "-"}
+              <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+                {confirmTarget.booking.title}
+                <br />
+                <span className="font-mono text-text-muted">
+                  {confirmTarget.booking.ref_id}
+                </span>
               </p>
-              <div className="mt-4 flex gap-2.5">
+              <div className="mt-5 flex gap-2">
                 <Button
-                  variant="danger"
+                  variant="secondary"
                   className="flex-1"
-                  onClick={() =>
-                    setConfirmTarget({ booking: r, decision: "reject" })
-                  }
+                  onClick={() => setConfirmTarget(null)}
                 >
-                  ปฏิเสธคำขอ
+                  ยกเลิก
                 </Button>
                 <Button
-                  variant="success"
-                  className="flex-1"
-                  onClick={() =>
-                    setConfirmTarget({ booking: r, decision: "approve" })
+                  variant={
+                    confirmTarget.decision === "approve" ? "success" : "dangerSolid"
                   }
+                  className="flex-1"
+                  onClick={handleConfirm}
+                  disabled={submitting}
                 >
-                  อนุมัติการยกเลิก
+                  {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
                 </Button>
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <Modal open={confirmTarget !== null} onClose={() => setConfirmTarget(null)}>
-        {confirmTarget && (
-          <>
-            <p className="text-lg font-semibold text-text-primary">
-              ยืนยันการ
-              {confirmTarget.decision === "approve"
-                ? "อนุมัติการยกเลิก"
-                : "ปฏิเสธคำขอ"}
-            </p>
-            <p className="mt-2 text-sm text-text-secondary">
-              {confirmTarget.booking.title} ({confirmTarget.booking.ref_id})
-            </p>
-            <div className="mt-4 flex gap-2.5">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setConfirmTarget(null)}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                variant={
-                  confirmTarget.decision === "approve" ? "success" : "dangerSolid"
-                }
-                className="flex-1"
-                onClick={handleConfirm}
-                disabled={submitting}
-              >
-                {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
-              </Button>
             </div>
-          </>
-        )}
-      </Modal>
+          )}
+        </Modal>
       </div>
     </div>
   );

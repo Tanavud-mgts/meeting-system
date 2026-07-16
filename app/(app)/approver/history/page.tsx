@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Badge } from "@/components/ui/Badge";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EditorialCard } from "@/components/ui/EditorialCard";
+import { FieldTable } from "@/components/ui/FieldTable";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 
 type HistoryEntry = {
   id: string;
@@ -77,61 +78,77 @@ export default function ApproverHistoryPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="ประวัติการทำงาน"
         subtitle="รายการอนุมัติและปฏิเสธที่ผ่านมาของคุณ"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl space-y-4 px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl space-y-4 px-6">
+        {loadError && <p className="text-sm text-danger-text">{loadError}</p>}
 
-      {loadError && <p className="text-sm text-danger-text">{loadError}</p>}
+        {!loading && entries.length === 0 && !loadError && (
+          <div className="rounded-[2px] border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
+            ยังไม่มีประวัติการทำงาน
+          </div>
+        )}
 
-      {!loading && entries.length === 0 && !loadError && (
-        <div className="rounded-lg border border-dashed border-neutral-400 bg-surface-card p-10 text-center text-md text-text-muted">
-          ยังไม่มีประวัติการทำงาน
-        </div>
-      )}
+        {loading && (
+          <div className="space-y-3">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        )}
 
-      {loading && (
-        <div className="space-y-3">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </div>
-      )}
+        {!loading && (
+          <div className="space-y-4">
+            {entries.map((e) => (
+              <EditorialCard
+                key={e.id}
+                accent={e.action === "approved" ? "success" : "danger"}
+              >
+                <EditorialCard.Section>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-lg font-bold text-text-primary">
+                        {e.booking_title}
+                      </p>
+                      <StatusMarker
+                        tone={e.action === "approved" ? "success" : "danger"}
+                      >
+                        {e.action === "approved" ? "อนุมัติ" : "ปฏิเสธ"}
+                      </StatusMarker>
+                    </div>
+                    <span className="font-mono text-xs text-text-muted">
+                      {e.booking_ref_id}
+                    </span>
+                  </div>
+                </EditorialCard.Section>
 
-      {!loading && (
-        <div className="space-y-3">
-          {entries.map((e) => (
-            <Card
-              key={e.id}
-              className={`border-l-4 ${
-                e.action === "approved"
-                  ? "border-l-success-solid"
-                  : "border-l-danger-solid"
-              }`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-bold text-text-primary">
-                  {e.booking_title}{" "}
-                  <span className="font-mono text-sm font-normal text-text-muted">
-                    {e.booking_ref_id}
-                  </span>
-                </p>
-                <Badge tone={e.action === "approved" ? "success" : "danger"}>
-                  {e.action === "approved" ? "อนุมัติ" : "ปฏิเสธ"}
-                </Badge>
-              </div>
-              <p className="mt-1.5 text-sm text-text-secondary">
-                ขั้นที่ {e.step} —{" "}
-                {new Date(e.acted_at).toLocaleString("th-TH")}
-              </p>
-              {e.note && (
-                <p className="mt-1 text-sm text-text-secondary">{e.note}</p>
-              )}
-            </Card>
-          ))}
-        </div>
-      )}
+                <EditorialCard.Section className={e.note ? "!py-0" : ""}>
+                  <FieldTable
+                    rows={[
+                      { label: "ขั้นที่", value: e.step },
+                      {
+                        label: "เมื่อ",
+                        value: new Date(e.acted_at).toLocaleString("th-TH"),
+                        mono: true,
+                      },
+                    ]}
+                  />
+                </EditorialCard.Section>
+
+                {e.note && (
+                  <EditorialCard.Section>
+                    <p className="mb-1 text-xs font-bold tracking-wider text-text-muted">
+                      หมายเหตุ
+                    </p>
+                    <p className="text-sm text-text-primary">{e.note}</p>
+                  </EditorialCard.Section>
+                )}
+              </EditorialCard>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
