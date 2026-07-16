@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EVENT_META, CHANNEL_LABEL, PREVIEW_VARS, applyTemplate, type Channel } from "@/lib/notifications/eventMeta";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionTitle } from "@/components/ui/PageHero";
+import { EditorialCard } from "@/components/ui/EditorialCard";
 
 type ChainUser = {
   id: string;
@@ -232,12 +233,12 @@ export default function DashboardSettingsPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="ตั้งค่าระบบ"
         subtitle="เวลาทำการ วันหยุด และการตั้งค่าการแจ้งเตือน"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
 
       {loadError && (
         <p className="mt-4 text-sm text-danger-text">{loadError}</p>
@@ -259,8 +260,9 @@ export default function DashboardSettingsPage() {
 
       {!loading && !loadError && (
         <div className="mt-4 space-y-6">
-          <Card>
-            <p className="font-medium text-text-primary">Approval Chain</p>
+          <EditorialCard>
+            <EditorialCard.Section>
+            <SectionTitle>Approval Chain</SectionTitle>
             <div className="mt-3 space-y-3">
               <div>
                 <label className="text-sm text-text-secondary">
@@ -314,10 +316,12 @@ export default function DashboardSettingsPage() {
                 </select>
               </div>
             </div>
-          </Card>
+            </EditorialCard.Section>
+          </EditorialCard>
 
-          <Card>
-            <p className="font-medium text-text-primary">เวลาทำการ</p>
+          <EditorialCard>
+            <EditorialCard.Section>
+            <SectionTitle>เวลาทำการ</SectionTitle>
             <div className="mt-3 flex gap-3">
               <div>
                 <label className="text-sm text-text-secondary">
@@ -346,10 +350,12 @@ export default function DashboardSettingsPage() {
                 />
               </div>
             </div>
-          </Card>
+            </EditorialCard.Section>
+          </EditorialCard>
 
-          <Card>
-            <p className="font-medium text-text-primary">วันหยุด</p>
+          <EditorialCard>
+            <EditorialCard.Section>
+            <SectionTitle>วันหยุด</SectionTitle>
             <div className="mt-3 flex gap-3">
               <input
                 type="date"
@@ -378,14 +384,16 @@ export default function DashboardSettingsPage() {
                 <p className="text-sm text-text-secondary">ยังไม่มีวันหยุด</p>
               )}
             </div>
-          </Card>
+            </EditorialCard.Section>
+          </EditorialCard>
 
           <Button onClick={handleSubmit} disabled={submitting}>
             {submitting ? "กำลังบันทึก..." : "บันทึกการตั้งค่า"}
           </Button>
 
-          <Card>
-            <p className="font-medium text-text-primary">ช่องทางแจ้งเตือน (เปิด/ปิดทั้งระบบ)</p>
+          <EditorialCard>
+            <EditorialCard.Section>
+            <SectionTitle>ช่องทางแจ้งเตือน (เปิด/ปิดทั้งระบบ)</SectionTitle>
             <p className="mt-1 text-sm text-text-secondary">
               การแจ้งเตือนในระบบ (in-app) ทำงานเสมอ — สวิตช์นี้ควบคุมช่องทางเสริม
             </p>
@@ -401,10 +409,12 @@ export default function DashboardSettingsPage() {
                 </label>
               ))}
             </div>
-          </Card>
+            </EditorialCard.Section>
+          </EditorialCard>
 
-          <Card>
-            <p className="font-medium text-text-primary">ตั้งค่ารายเหตุการณ์</p>
+          <EditorialCard>
+            <EditorialCard.Section>
+            <SectionTitle>ตั้งค่ารายเหตุการณ์</SectionTitle>
             <p className="mt-1 text-sm text-text-secondary">
               แตะชื่อเหตุการณ์เพื่อเปิด/ปิดช่องทางและแก้ข้อความ — เว้นว่างข้อความไว้เพื่อใช้ค่าเริ่มต้น
             </p>
@@ -514,7 +524,8 @@ export default function DashboardSettingsPage() {
                 );
               })}
             </div>
-          </Card>
+            </EditorialCard.Section>
+          </EditorialCard>
 
           {notifError && <p className="text-sm text-danger-text">{notifError}</p>}
           {notifSuccess && <p className="text-sm text-success-text">{notifSuccess}</p>}

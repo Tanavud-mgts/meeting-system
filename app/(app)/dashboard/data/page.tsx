@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionTitle } from "@/components/ui/PageHero";
+import { EditorialCard } from "@/components/ui/EditorialCard";
 
 type Dataset = "bookings" | "approval_history" | "users";
 
@@ -222,99 +223,99 @@ export default function DashboardDataPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="จัดการข้อมูล"
         subtitle="ส่งออกข้อมูลและจัดการการเก็บรักษาข้อมูล"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl space-y-6 px-6">
 
-      {loadError && (
-        <p className="mt-4 text-sm text-danger-text">{loadError}</p>
-      )}
+      {loadError && <p className="text-sm text-danger-text">{loadError}</p>}
 
-      <Card className="mt-6">
-        <p className="font-medium text-text-primary">Export ข้อมูล</p>
-        {exportError && (
-          <p className="mt-2 text-sm text-danger-text">{exportError}</p>
-        )}
-        <div className="mt-3 flex flex-wrap gap-3">
-          {(["bookings", "approval_history", "users"] as Dataset[]).map(
-            (dataset) => (
-              <Button
-                key={dataset}
-                variant="secondary"
-                onClick={() => handleExport(dataset)}
-                disabled={exportingDataset === dataset}
-              >
-                {exportingDataset === dataset
-                  ? "กำลังสร้างไฟล์..."
-                  : `Export ${DATASET_LABEL[dataset]} (CSV)`}
-              </Button>
-            )
+      <EditorialCard>
+        <EditorialCard.Section>
+          <SectionTitle>Export ข้อมูล</SectionTitle>
+          {exportError && (
+            <p className="mt-2 text-sm text-danger-text">{exportError}</p>
           )}
-        </div>
-      </Card>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {(["bookings", "approval_history", "users"] as Dataset[]).map(
+              (dataset) => (
+                <Button
+                  key={dataset}
+                  variant="secondary"
+                  onClick={() => handleExport(dataset)}
+                  disabled={exportingDataset === dataset}
+                >
+                  {exportingDataset === dataset
+                    ? "กำลังสร้างไฟล์..."
+                    : `Export ${DATASET_LABEL[dataset]} (CSV)`}
+                </Button>
+              )
+            )}
+          </div>
+        </EditorialCard.Section>
+      </EditorialCard>
 
-      <Card className="mt-6">
-        <p className="font-medium text-text-primary">Retention Settings</p>
-        <div className="mt-3 space-y-3">
-          <div>
-            <label className="text-sm text-text-secondary">
-              เก็บ Activity Log กี่เดือน
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={activityRetention}
-              onChange={(e) => setActivityRetention(e.target.value)}
-              className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
-            />
+      <EditorialCard>
+        <EditorialCard.Section>
+          <SectionTitle>Retention Settings</SectionTitle>
+          <div className="mt-3 space-y-3">
+            <div>
+              <label className="text-sm text-text-secondary">
+                เก็บ Activity Log กี่เดือน
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={activityRetention}
+                onChange={(e) => setActivityRetention(e.target.value)}
+                className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-text-secondary">
+                เก็บ Integration Log กี่เดือน
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={integrationRetention}
+                onChange={(e) => setIntegrationRetention(e.target.value)}
+                className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-text-secondary">
+                เก็บ LINE Token กี่วัน
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={lineTokenRetention}
+                onChange={(e) => setLineTokenRetention(e.target.value)}
+                className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+              />
+            </div>
           </div>
-          <div>
-            <label className="text-sm text-text-secondary">
-              เก็บ Integration Log กี่เดือน
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={integrationRetention}
-              onChange={(e) => setIntegrationRetention(e.target.value)}
-              className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-text-secondary">
-              เก็บ LINE Token กี่วัน
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={lineTokenRetention}
-              onChange={(e) => setLineTokenRetention(e.target.value)}
-              className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
-            />
-          </div>
-        </div>
-        {retentionError && (
-          <p className="mt-2 text-sm text-danger-text">{retentionError}</p>
-        )}
-        {retentionSuccess && (
-          <p className="mt-2 text-sm text-success-text">
-            {retentionSuccess}
-          </p>
-        )}
-        <Button
-          onClick={handleRetentionSubmit}
-          disabled={retentionSubmitting}
-          className="mt-3"
-        >
-          {retentionSubmitting ? "กำลังบันทึก..." : "บันทึกการตั้งค่า"}
-        </Button>
-      </Card>
+          {retentionError && (
+            <p className="mt-2 text-sm text-danger-text">{retentionError}</p>
+          )}
+          {retentionSuccess && (
+            <p className="mt-2 text-sm text-success-text">{retentionSuccess}</p>
+          )}
+          <Button
+            onClick={handleRetentionSubmit}
+            disabled={retentionSubmitting}
+            className="mt-3"
+          >
+            {retentionSubmitting ? "กำลังบันทึก..." : "บันทึกการตั้งค่า"}
+          </Button>
+        </EditorialCard.Section>
+      </EditorialCard>
 
-      <div className="mt-6 rounded-lg border border-danger-border bg-danger-surface p-5 shadow-card transition-shadow duration-150 hover:shadow-raised">
-        <p className="font-medium text-danger-text">Danger Zone</p>
+      <div className="rounded-[2px] border-l-[3px] border border-danger-border border-l-danger-solid bg-danger-surface p-4">
+        <p className="font-bold text-danger-text">Danger Zone</p>
         <p className="mt-1 text-sm text-danger-text">
           การกระทำในส่วนนี้ไม่สามารถย้อนกลับได้
         </p>
@@ -337,7 +338,7 @@ export default function DashboardDataPage() {
         open={cleanupConfirmOpen}
         onClose={() => setCleanupConfirmOpen(false)}
       >
-        <p className="text-lg font-semibold text-text-primary">
+        <p className="text-lg font-extrabold text-text-primary">
           ยืนยันการล้าง log เก่า
         </p>
         <p className="mt-2 text-sm text-text-secondary">

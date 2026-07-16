@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionTitle } from "@/components/ui/PageHero";
+import { EditorialCard } from "@/components/ui/EditorialCard";
 
 type CountRow = { label: string; count: number };
 
@@ -32,6 +33,39 @@ const MONTH_LABEL: Record<number, string> = {
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
+
+/* ตารางรายงานสไตล์ editorial — หัวคอลัมน์จาง คั่นแถวด้วย hairline, ตัวเลข mono */
+function ReportTable({
+  colLabel,
+  rows,
+}: {
+  colLabel: string;
+  rows: CountRow[];
+}) {
+  return (
+    <table className="mt-3 w-full text-sm">
+      <thead>
+        <tr className="border-b border-neutral-200 text-left text-text-muted">
+          <th className="pb-2 font-medium">{colLabel}</th>
+          <th className="pb-2 text-right font-medium">จำนวนครั้ง</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr
+            key={row.label}
+            className="border-b border-neutral-150 last:border-b-0"
+          >
+            <td className="py-2 text-text-primary">{row.label}</td>
+            <td className="py-2 text-right font-mono text-text-primary">
+              {row.count}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 export default function ReportsPage() {
   const [year, setYear] = useState(CURRENT_YEAR);
@@ -92,127 +126,88 @@ export default function ReportsPage() {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <PageHero
+      <PageHeader
         title="รายงาน"
         subtitle="สรุปการใช้ห้องและการจองตามหน่วยงาน (นับเฉพาะการจองที่อนุมัติแล้ว)"
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
-
-      <div className="mt-4 flex flex-wrap gap-3">
-        <label className="flex flex-col gap-1 text-sm text-text-secondary">
-          ปี
-          <select
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
-          >
-            {YEAR_OPTIONS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm text-text-secondary">
-          เดือน
-          <select
-            value={month}
-            onChange={(e) => setMonth(Number(e.target.value))}
-            className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
-          >
-            <option value={0}>ทั้งปี</option>
-            {Object.entries(MONTH_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {loadError && <p className="mt-4 text-sm text-danger-text">{loadError}</p>}
-
-      {loading && (
-        <div className="mt-4 space-y-4">
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-40 w-full" />
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
+        <div className="flex flex-wrap gap-3">
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            ปี
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+            >
+              {YEAR_OPTIONS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            เดือน
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-sm text-text-primary"
+            >
+              <option value={0}>ทั้งปี</option>
+              {Object.entries(MONTH_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
-      )}
 
-      {!loading && !loadError && stats && (
-        <div className="mt-4 space-y-4">
-          <Card>
-            <p className="font-medium text-text-primary">
-              การใช้ห้องประชุม — {periodLabel}
+        {loadError && (
+          <p className="mt-4 text-sm text-danger-text">{loadError}</p>
+        )}
+
+        {loading && (
+          <div className="mt-4 space-y-4">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        )}
+
+        {!loading && !loadError && stats && (
+          <div className="mt-4 space-y-4">
+            <EditorialCard>
+              <EditorialCard.Section>
+                <SectionTitle>การใช้ห้องประชุม — {periodLabel}</SectionTitle>
+                {stats.roomUtilization.length === 0 ? (
+                  <p className="mt-3 text-sm text-text-secondary">
+                    ไม่มีข้อมูลในช่วงเวลานี้
+                  </p>
+                ) : (
+                  <ReportTable colLabel="ห้อง" rows={stats.roomUtilization} />
+                )}
+              </EditorialCard.Section>
+            </EditorialCard>
+
+            <EditorialCard>
+              <EditorialCard.Section>
+                <SectionTitle>การจองตามหน่วยงาน — {periodLabel}</SectionTitle>
+                {stats.byDepartment.length === 0 ? (
+                  <p className="mt-3 text-sm text-text-secondary">
+                    ไม่มีข้อมูลในช่วงเวลานี้
+                  </p>
+                ) : (
+                  <ReportTable colLabel="หน่วยงาน" rows={stats.byDepartment} />
+                )}
+              </EditorialCard.Section>
+            </EditorialCard>
+
+            <p className="text-xs text-text-secondary">
+              หมายเหตุ: ดาวน์โหลดข้อมูลดิบได้ที่หน้า ข้อมูล/Export
             </p>
-            {stats.roomUtilization.length === 0 ? (
-              <p className="mt-2 text-sm text-text-secondary">
-                ไม่มีข้อมูลในช่วงเวลานี้
-              </p>
-            ) : (
-              <table className="mt-3 w-full text-sm">
-                <thead>
-                  <tr className="text-left text-text-secondary">
-                    <th className="pb-2 font-medium">ห้อง</th>
-                    <th className="pb-2 text-right font-medium">จำนวนครั้ง</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.roomUtilization.map((row) => (
-                    <tr
-                      key={row.label}
-                      className="border-t border-neutral-200"
-                    >
-                      <td className="py-2 text-text-primary">{row.label}</td>
-                      <td className="py-2 text-right text-text-primary">
-                        {row.count}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Card>
-
-          <Card>
-            <p className="font-medium text-text-primary">
-              การจองตามหน่วยงาน — {periodLabel}
-            </p>
-            {stats.byDepartment.length === 0 ? (
-              <p className="mt-2 text-sm text-text-secondary">
-                ไม่มีข้อมูลในช่วงเวลานี้
-              </p>
-            ) : (
-              <table className="mt-3 w-full text-sm">
-                <thead>
-                  <tr className="text-left text-text-secondary">
-                    <th className="pb-2 font-medium">หน่วยงาน</th>
-                    <th className="pb-2 text-right font-medium">จำนวนครั้ง</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.byDepartment.map((row) => (
-                    <tr
-                      key={row.label}
-                      className="border-t border-neutral-200"
-                    >
-                      <td className="py-2 text-text-primary">{row.label}</td>
-                      <td className="py-2 text-right text-text-primary">
-                        {row.count}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Card>
-
-          <p className="text-xs text-text-secondary">
-            หมายเหตุ: ดาวน์โหลดข้อมูลดิบได้ที่หน้า ข้อมูล/Export
-          </p>
-        </div>
-      )}
+          </div>
+        )}
       </div>
     </div>
   );
