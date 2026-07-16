@@ -288,7 +288,7 @@ token ทั้งหมด map เป็น utility class ผ่าน `@theme 
 | `FieldTable` | ตาราง label/value 2 คอลัมน์ align กัน คั่น `border-neutral-150`; `mono` สำหรับ ref/เวลา |
 | `StatusMarker` | swatch สี่เหลี่ยม 9px + ข้อความ (แทน pill ในบริบทตาราง); `Badge` pill ยังใช้ที่หัวข้อ/dialog |
 | `PageHeader` | หัวหน้าเตี้ย: accent bar ม่วง + `h1` + เส้นล่าง ไม่มี gradient bg ไม่ overlap (`PageHero` เดิมยังใช้กับหน้าอื่น) |
-| `Brand` | โลโก้คณะ (`public/logo-fms.svg`) + wordmark 2 ระดับ; `size="sm"` sidebar / `"lg"` หน้า public |
+| `Brand` | โลโก้คณะ (`public/logo-fms.webp` — สีเต็ม พื้นโปร่ง) + wordmark 2 ระดับ; `size="sm"` sidebar / `"lg"` หน้า public |
 
 ### นโยบายสี (Editorial)
 - **ม่วง** = accent bar หัวข้อ + ปุ่ม primary เดียว/หน้า + เส้น chain done
