@@ -1,6 +1,7 @@
-// Faculty logo + wordmark. Uses the official vector logo (public/logo-fms.svg)
-// at both sizes — SVG scales cleanly, no rasterizing. Plain <img> — repo does
-// not use next/image.
+// Faculty logo + wordmark. Uses the official full-color raster logo
+// (public/logo-fms.webp, transparent) at both sizes — keeps the real colors
+// (the SVG trace was monochrome). 700px source stays crisp at 30/64px incl.
+// retina. Plain <img> — repo does not use next/image.
 const IMG: Record<"sm" | "lg", { px: number; cls: string }> = {
   sm: { px: 30, cls: "h-[30px] w-[30px]" },
   lg: { px: 64, cls: "h-16 w-16" },
@@ -22,7 +23,7 @@ export function Brand({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo-fms.svg"
+        src="/logo-fms.webp"
         alt="ตราคณะวิทยาการจัดการ"
         width={IMG[size].px}
         height={IMG[size].px}
