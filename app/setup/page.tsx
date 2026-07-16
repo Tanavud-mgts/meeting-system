@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionTitle } from "@/components/ui/PageHero";
+import { EditorialCard } from "@/components/ui/EditorialCard";
 import { Brand } from "@/components/ui/Brand";
 
 type Room = {
@@ -222,15 +223,16 @@ export default function SetupWizardPage() {
       <div className="flex justify-center pt-8">
         <Brand size="lg" />
       </div>
-      <PageHero
+      <PageHeader
         title="ตั้งค่าระบบเริ่มต้น"
         subtitle={`ขั้นตอน ${step} / 4`}
         width="max-w-2xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-2xl px-6">
+      <div className="relative mx-auto mt-6 max-w-2xl px-6">
 
       {step === 1 && (
-        <Card className="mt-6">
+        <EditorialCard>
+          <EditorialCard.Section>
           <p className="text-text-primary">
             ยินดีต้อนรับสู่ระบบจองห้องประชุม LPRU ก่อนเริ่มใช้งาน
             กรุณาตั้งค่าเริ่มต้น 3 ขั้นตอน ได้แก่ เพิ่มห้องประชุม, กำหนด
@@ -239,12 +241,14 @@ export default function SetupWizardPage() {
           <Button onClick={() => setStep(2)} className="mt-4">
             เริ่มต้น
           </Button>
-        </Card>
+          </EditorialCard.Section>
+        </EditorialCard>
       )}
 
       {step === 2 && (
-        <Card className="mt-6">
-          <p className="font-medium text-text-primary">เพิ่มห้องประชุม</p>
+        <EditorialCard>
+          <EditorialCard.Section>
+          <SectionTitle>เพิ่มห้องประชุม</SectionTitle>
 
           {roomsLoadError && (
             <p className="mt-2 text-sm text-danger-text">{roomsLoadError}</p>
@@ -293,12 +297,14 @@ export default function SetupWizardPage() {
               ถัดไป
             </Button>
           </div>
-        </Card>
+          </EditorialCard.Section>
+        </EditorialCard>
       )}
 
       {step === 3 && (
-        <Card className="mt-6">
-          <p className="font-medium text-text-primary">Approval Chain</p>
+        <EditorialCard>
+          <EditorialCard.Section>
+          <SectionTitle>Approval Chain</SectionTitle>
 
           {configLoadError && (
             <p className="mt-2 text-sm text-danger-text">{configLoadError}</p>
@@ -366,12 +372,14 @@ export default function SetupWizardPage() {
               ถัดไป
             </Button>
           </div>
-        </Card>
+          </EditorialCard.Section>
+        </EditorialCard>
       )}
 
       {step === 4 && (
-        <Card className="mt-6">
-          <p className="font-medium text-text-primary">เวลาทำการ</p>
+        <EditorialCard>
+          <EditorialCard.Section>
+          <SectionTitle>เวลาทำการ</SectionTitle>
 
           <div className="mt-3 flex gap-3">
             <div>
@@ -402,7 +410,7 @@ export default function SetupWizardPage() {
             </div>
           </div>
 
-          <p className="mt-4 font-medium text-text-primary">วันหยุด</p>
+          <p className="mt-4 font-bold text-text-primary">วันหยุด</p>
           <div className="mt-2 flex gap-3">
             <input
               type="date"
@@ -444,7 +452,8 @@ export default function SetupWizardPage() {
               {finishing ? "กำลังบันทึก..." : "เสร็จสิ้น"}
             </Button>
           </div>
-        </Card>
+          </EditorialCard.Section>
+        </EditorialCard>
       )}
       </div>
     </div>
