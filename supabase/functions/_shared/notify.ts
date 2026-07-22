@@ -51,7 +51,8 @@ export type EventKey =
   | "cancellation_approved"
   | "cancellation_denied"
   | "booking_cancelled"
-  | "line_quota_warning";
+  | "line_quota_warning"
+  | "calendar_sync_failed";
 
 interface EventDefault {
   title: string;
@@ -105,6 +106,11 @@ const EVENT_DEFAULTS: Record<EventKey, EventDefault> = {
     body: "เดือนนี้ส่งไปแล้ว {sent}/500 ข้อความ เมื่อครบโควตาระบบจะหยุดส่งทาง LINE อัตโนมัติ",
     link: "/dashboard/integrations",
   },
+  calendar_sync_failed: {
+    title: "⚠️ ซิงก์ปฏิทินไม่สำเร็จ",
+    body: "การจอง [{ref_id}] {room} วันที่ {date} — ซิงก์ปฏิทิน ({action}) ไม่สำเร็จ ระบบบันทึกการจองไว้ถูกต้องแล้ว โปรดตรวจสอบที่หน้าเชื่อมต่อระบบ",
+    link: "/dashboard/integrations",
+  },
 };
 
 // รายชื่อ event keys ทั้งหมด (source of truth สำหรับ validator/UI) — ต้องครบตาม EventKey
@@ -118,6 +124,7 @@ export const EVENT_KEYS: EventKey[] = [
   "cancellation_denied",
   "booking_cancelled",
   "line_quota_warning",
+  "calendar_sync_failed",
 ];
 
 export interface EventOverride {
@@ -154,6 +161,7 @@ const DISCORD_MESSAGE_TEMPLATES: Record<EventKey, string> = {
   cancellation_denied: "❌ ไม่อนุมัติยกเลิก — {room} · {date}",
   booking_cancelled: "⚠️ Admin ยกเลิก — {room} · {date}",
   line_quota_warning: "⚠️ LINE quota: {sent}/500",
+  calendar_sync_failed: "⚠️ ปฏิทินซิงก์ไม่สำเร็จ ({action}) — [{ref_id}] {room} · {date}",
 };
 
 function buildDiscordMessage(eventKey: EventKey, vars: Record<string, string>): string {

@@ -446,3 +446,18 @@ describe("notifyAndLog — LINE channel", () => {
     ).resolves.toBeUndefined();
   });
 });
+
+describe("calendar_sync_failed event (registry)", () => {
+  it("buildNotification มี default title/body/link", () => {
+    const n = buildNotification("calendar_sync_failed", {
+      ref_id: "BK-2026-0042",
+      room: "ห้องประชุมชั้น 2",
+      date: "25 ก.ค. 69",
+      action: "สร้าง",
+    });
+    expect(n.title).toBe("⚠️ ซิงก์ปฏิทินไม่สำเร็จ");
+    expect(n.body).toContain("BK-2026-0042");
+    expect(n.body).toContain("สร้าง");
+    expect(n.link).toBe("/dashboard/integrations");
+  });
+});
