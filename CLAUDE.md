@@ -84,7 +84,7 @@ npx playwright test             # รัน E2E tests
 | Service | Limit | ผลกระทบต่อโค้ด |
 |---|---|---|
 | Supabase | 500MB storage, หยุดอัตโนมัติถ้าไม่มี activity 7 วัน | ต้องมี keep-alive ping ทุก 5 วัน |
-| Make.com | 2 active scenarios, 1,000 credits/เดือน | ใช้ Router module แยก action ภายใน scenario เดียว ไม่สร้าง scenario ใหม่ |
+| Make.com | 2 active scenarios, 1,000 credits/เดือน | Google Calendar เท่านั้น (Discord ยิงตรงจาก Edge Function) — Router แยก create/delete ใน scenario เดียว รับ gcal_event_id กลับทาง webhook response |
 | LINE OA | 500 push messages/เดือน | Reply message ไม่จำกัด แต่ push ต้องประหยัด — เตือน Admin เมื่อใกล้เต็ม |
 | Vercel Hobby | Function timeout 10 วินาที | Export function ที่ใช้เวลานานให้เรียก Supabase Edge Function ตรง ไม่ผ่าน Next.js API Route |
 
