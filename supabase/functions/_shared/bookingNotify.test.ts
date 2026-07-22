@@ -5,6 +5,7 @@ import {
   notifyCancellationRequested,
   notifyCancellationDecision,
   notifyBookingCancelledByAdmin,
+  notifyCalendarSyncFailed,
 } from "./bookingNotify.ts";
 import { makeClient, type DbCallContext } from "./mockClient.ts";
 
@@ -276,5 +277,63 @@ describe("bookingNotify ไม่ throw เมื่อ db พัง", () => {
     });
     await expect(notifyCancellationRequested(client as never, "b1", "ยกเลิก")).resolves.toBeUndefined();
     expect(inserts(calls)).toHaveLength(0);
+  });
+});
+
+describe("notifyCalendarSyncFailed", () => {
+  // system_config responder ต้องมีทั้ง admin_id (loadChain) และ toggles (loadNotificationConfig)
+  function responder(ctx: DbCallContext) {
+    if (ctx.table === "booking_detail" && ctx.op === "select") {
+      return {
+        data: {
+          ref_id: "BK-2026-0042",
+          requester_id: "req1",
+          requester_name: "สมชาย",
+          room_name: "ห้องประชุมชั้น 2",
+          start_time: "2026-07-25T02:00:00Z",
+          end_time: "2026-07-25T04:00:00Z",
+          cancellation_reason: null,
+        },
+      };
+    }
+    if (ctx.table === "system_config" && ctx.op === "select") {
+      return {
+        data: {
+          admin_id: "adm1",
+          approver1_id: null,
+          approver2_id: null,
+          welpru_enabled: false,
+          discord_enabled: false,
+          line_enabled: false,
+          notification_settings: {},
+        },
+      };
+    }
+    if (ctx.table === "notifications" && ctx.op === "insert") return {};
+    return {};
+  }
+
+  it("แจ้ง admin ด้วย event calendar_sync_failed (in-app insert ถึง admin_id)", async () => {
+    const { client, calls } = makeClient(responder);
+    await notifyCalendarSyncFailed(client as never, "b1", "create");
+    const inserts = calls.filter(
+      (c: DbCallContext) =>
+        c.table === "notifications" &&
+        c.op === "insert" &&
+        c.payload?.event_key === "calendar_sync_failed"
+    );
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0].payload?.user_id).toBe("adm1");
+    expect(String(inserts[0].payload?.body)).toContain("สร้าง");
+  });
+
+  it("ไม่มี admin_id → ไม่ insert อะไร ไม่ throw", async () => {
+    const { client, calls } = makeClient((ctx: DbCallContext) => {
+      if (ctx.table === "booking_detail") return { data: { ref_id: "R", requester_id: "r", requester_name: "n", room_name: "rm", start_time: "2026-07-25T02:00:00Z", end_time: "2026-07-25T04:00:00Z", cancellation_reason: null } };
+      if (ctx.table === "system_config") return { data: { admin_id: null } };
+      return {};
+    });
+    await expect(notifyCalendarSyncFailed(client as never, "b1", "delete")).resolves.toBeUndefined();
+    expect(calls.filter((c: DbCallContext) => c.table === "notifications")).toHaveLength(0);
   });
 });

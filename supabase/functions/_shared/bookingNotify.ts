@@ -10,6 +10,7 @@ const STEP_FIELD: Record<number, "admin_id" | "approver1_id" | "approver2_id"> =
 };
 
 interface BookingDetailRow {
+  ref_id: string;
   requester_id: string;
   requester_name: string;
   room_name: string;
@@ -30,7 +31,7 @@ async function loadDetail(
 ): Promise<BookingDetailRow | null> {
   const { data, error } = await client
     .from("booking_detail")
-    .select("requester_id, requester_name, room_name, start_time, end_time, cancellation_reason")
+    .select("ref_id, requester_id, requester_name, room_name, start_time, end_time, cancellation_reason")
     .eq("id", bookingId)
     .single();
   if (error || !data) return null;
@@ -192,5 +193,29 @@ export async function notifyBookingCancelledByAdmin(
     });
   } catch (err) {
     console.error("[notifyBookingCancelledByAdmin]", err);
+  }
+}
+
+export async function notifyCalendarSyncFailed(
+  client: SupabaseClient,
+  bookingId: string,
+  action: "create" | "delete"
+): Promise<void> {
+  try {
+    const d = await loadDetail(client, bookingId);
+    const chain = await loadChain(client);
+    if (!d || !chain?.admin_id) return;
+    await notifyAndLog(client, {
+      eventKey: "calendar_sync_failed",
+      recipients: [{ userId: chain.admin_id }],
+      variables: {
+        ref_id: d.ref_id,
+        room: d.room_name,
+        date: formatThaiDate(d.start_time),
+        action: action === "create" ? "สร้าง" : "ลบ",
+      },
+    });
+  } catch (err) {
+    console.error("[notifyCalendarSyncFailed]", err);
   }
 }
