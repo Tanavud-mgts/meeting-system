@@ -12,7 +12,7 @@
 - **Backend:** Supabase (PostgreSQL, Auth, RLS, Edge Functions, Realtime)
 - **Auth:** Google OAuth จำกัดเฉพาะ `@g.lpru.ac.th` (2 ชั้น: Google Consent Screen + Auth Hook + Middleware)
 - **Notification:** LINE Messaging API (Flex Message + Postback) — เป็น supplement เท่านั้น ไม่ใช่ primary interface
-- **Automation:** Make.com (Free Plan — 2 scenarios, 1,000 credits/เดือน) — สร้าง/ลบ Google Calendar event + Discord notify
+- **Automation:** Make.com (Free Plan — 2 scenarios, 1,000 credits/เดือน) — สร้าง/ลบ Google Calendar event เท่านั้น (Discord แจ้งเตือนยิงตรงจาก Edge Function)
 - **Hosting:** Vercel (Hobby Free Plan) — ยอมรับความเสี่ยงเรื่อง ToS non-commercial แล้ว มี monitoring ทดแทน
 - **Font:** Sarabun (ภาษาไทย)
 - **Testing:** Vitest (unit/integration) + Playwright (E2E)
