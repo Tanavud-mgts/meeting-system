@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PageHero } from "@/components/ui/PageHero";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 type ViewMode = "day" | "week" | "month";
 
@@ -413,14 +413,14 @@ export default function CalendarPage() {
 
   return (
     <div className="animate-fade-in-up pb-16">
-      <PageHero
+      <PageHeader
         title="ภาพรวมการจองห้องประชุม"
         subtitle="ดูตารางการใช้ห้องประชุมทั้งหมดแบบวัน สัปดาห์ และเดือน"
         width="max-w-5xl"
       />
-      <div className="relative mx-auto -mt-6 max-w-5xl px-6">
+      <div className="relative mx-auto mt-6 max-w-5xl px-6">
 
-      {loadError && <p className="mt-4 text-sm text-danger-text">{loadError}</p>}
+      {loadError && <p className="mb-4 text-sm text-danger-text">{loadError}</p>}
 
       {loading && (
         <div>
@@ -431,7 +431,7 @@ export default function CalendarPage() {
       {!loading && !loadError && (
         <>
           {/* Toolbar */}
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-surface-card px-4 py-3 shadow-card">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[2px] border border-neutral-300 bg-surface-card px-4 py-3">
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="flex items-center gap-1">
                 <button
@@ -468,7 +468,7 @@ export default function CalendarPage() {
                     onClick={() => setView(v)}
                     className={`h-[30px] cursor-pointer rounded-sm px-3.5 text-sm font-bold ${
                       view === v
-                        ? "bg-grad-brand shadow-brand text-text-on-primary"
+                        ? "bg-brand-primary text-text-on-primary"
                         : "text-text-secondary"
                     }`}
                   >
@@ -506,7 +506,7 @@ export default function CalendarPage() {
 
           {/* มุมมองเดือน */}
           {isMonth && (
-            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-surface-card shadow-card">
+            <div className="overflow-hidden rounded-[2px] border border-neutral-300 bg-surface-card">
               <div className="grid grid-cols-7 border-b border-neutral-150 bg-neutral-50">
                 {WEEKDAY_HEADS.map((wd) => (
                   <div
@@ -585,7 +585,7 @@ export default function CalendarPage() {
 
           {/* มุมมองสัปดาห์/วัน (timeline) */}
           {isGrid && (
-            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-surface-card shadow-card">
+            <div className="overflow-hidden rounded-[2px] border border-neutral-300 bg-surface-card">
               <div className="flex border-b border-neutral-150 bg-neutral-50">
                 <div className="w-14 flex-none" />
                 {columns.map((col) => (
@@ -638,7 +638,7 @@ export default function CalendarPage() {
                       <button
                         key={b.booking.id}
                         onClick={() => setSelected(b.booking)}
-                        className="absolute cursor-pointer overflow-hidden rounded-sm px-1.5 py-1 text-left shadow-card"
+                        className="absolute cursor-pointer overflow-hidden rounded-sm px-1.5 py-1 text-left"
                         style={{
                           top: b.top,
                           height: b.height,
@@ -679,7 +679,7 @@ export default function CalendarPage() {
                       <button
                         key={b.id}
                         onClick={() => setSelected(b)}
-                        className="flex cursor-pointer items-start gap-3 rounded-md border border-neutral-150 bg-surface-card p-3.5 text-left shadow-card"
+                        className="flex cursor-pointer items-start gap-3 rounded-[2px] border border-neutral-300 bg-surface-card p-3 text-left"
                         style={{
                           borderLeft: `4px solid ${STATUS_STYLE[b.status].dot}`,
                         }}
