@@ -122,6 +122,8 @@ describe("decideCancellation", () => {
 
   it("approving a cancel request sets the booking to cancelled and logs it", async () => {
     const { client, calls } = makeClient((ctx: DbCallContext): DbResponse => {
+      if (ctx.table === "booking_detail" && ctx.op === "select")
+        return { data: { id: "b1", ref_id: "BK-1", gcal_event_id: null } };
       if (ctx.op === "select")
         return { data: { final_status: "cancel_requested", cancellation_reason: "r" } };
       if (ctx.table === "bookings" && ctx.op === "update") return { data: [{ id: "b1" }] };
@@ -132,6 +134,7 @@ describe("decideCancellation", () => {
     expect(result.newStatus).toBe("cancelled");
     const update = calls.find((c) => c.table === "bookings" && c.op === "update");
     expect(update?.payload).toEqual({ final_status: "cancelled" });
+    expect(calls.some((c) => c.table === "booking_detail")).toBe(true);
   });
 
   it("rejecting a cancel request restores approved and writes an activity log", async () => {
