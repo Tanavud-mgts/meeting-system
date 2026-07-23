@@ -42,6 +42,7 @@ describe("resolveLimit", () => {
     expect(resolveLimit({})).toBe(1000);
     expect(resolveLimit({ operations: "many" })).toBe(1000);
     expect(resolveLimit({ operations: 0 })).toBe(1000);
+    expect(resolveLimit({ operations: -5 })).toBe(1000);
   });
 });
 
@@ -82,13 +83,15 @@ describe("decideAction", () => {
 describe("runQuotaCheck", () => {
   // responder: system_config select (id/admin_id/last_tier + notify config), update ok,
   // notifications + integration_health insert ok
-  function responder(overrides: { lastTier?: number; updateError?: boolean } = {}) {
+  function responder(
+    overrides: { lastTier?: number; updateError?: boolean; adminId?: string | null } = {}
+  ) {
     return (ctx: DbCallContext) => {
       if (ctx.table === "system_config" && ctx.op === "select") {
         return {
           data: {
             id: "cfg-1",
-            admin_id: "adm1",
+            admin_id: "adminId" in overrides ? overrides.adminId : "adm1",
             make_quota_last_tier: overrides.lastTier ?? 0,
             welpru_enabled: false,
             discord_enabled: false,
@@ -125,6 +128,23 @@ describe("runQuotaCheck", () => {
       status: "success",
       payload: { kind: "quota_check", used: 820, limit: 1000 },
     });
+  });
+
+  it("tier ขึ้นแต่ไม่มี admin_id → update state, ไม่แจ้ง, log failed skipped:no_admin_id", async () => {
+    const { client, calls } = makeClient(responder({ adminId: null }));
+    await runQuotaCheck(client as never, snap(820));
+    // state ยังต้องขึ้น
+    const upd = calls.find((c: DbCallContext) => c.table === "system_config" && c.op === "update");
+    expect(upd?.payload).toEqual({ make_quota_last_tier: 80 });
+    // ไม่มี notification
+    expect(calls.some((c: DbCallContext) => c.table === "notifications")).toBe(false);
+    // มี log failed ที่ทิ้งร่องรอยว่า alert หลุด
+    const skipLog = calls.find(
+      (c: DbCallContext) =>
+        c.table === "integration_health" &&
+        (c.payload?.payload as { skipped?: string } | undefined)?.skipped === "no_admin_id"
+    );
+    expect(skipLog?.payload).toMatchObject({ service: "make_com", status: "failed" });
   });
 
   it("tier เท่าเดิม (80→80) → ไม่ update ไม่แจ้ง แต่ log success", async () => {

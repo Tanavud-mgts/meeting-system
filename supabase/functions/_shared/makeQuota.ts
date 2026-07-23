@@ -151,16 +151,27 @@ export async function runQuotaCheck(
         return;
       }
 
-      if (action === "notify" && cfg.admin_id) {
-        await notifyAndLog(client, {
-          eventKey: "make_quota_warning",
-          recipients: [{ userId: cfg.admin_id }],
-          variables: {
-            used: String(used),
-            limit: String(limit),
-            percent: String(Math.round((used / limit) * 100)),
-          },
-        });
+      if (action === "notify") {
+        if (cfg.admin_id) {
+          await notifyAndLog(client, {
+            eventKey: "make_quota_warning",
+            recipients: [{ userId: cfg.admin_id }],
+            variables: {
+              used: String(used),
+              limit: String(limit),
+              percent: String(Math.round((used / limit) * 100)),
+            },
+          });
+        } else {
+          // ไม่มี admin_id → state ขึ้นแล้วแต่แจ้งไม่ได้ (จะไม่เตือน tier นี้อีก) →
+          // ทิ้งร่องรอยให้เห็นในหน้า Integration Health ว่าเตือนหลุด
+          await logIntegration(client, {
+            service: "make_com",
+            status: "failed",
+            payload: { kind: "quota_check", used, limit, skipped: "no_admin_id" },
+            error_detail: `tier ${currentTier} reached but admin_id not set — alert dropped`,
+          });
+        }
       }
     }
 
