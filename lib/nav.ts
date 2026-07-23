@@ -80,6 +80,7 @@ const SIDEBAR_ORDER: Entry[] = [
     label: "รายงาน",
     roles: ["approver"],
   },
+  { kind: "link", href: "/guide", label: "คู่มือการใช้งาน", roles: ALL },
   { kind: "link", href: "/profile", label: "โปรไฟล์", roles: ALL },
 ];
 

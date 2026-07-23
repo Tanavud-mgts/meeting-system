@@ -2,21 +2,22 @@ import { describe, it, expect } from "vitest";
 import { buildSidebar, findGroupForPath } from "./nav";
 
 describe("buildSidebar", () => {
-  it("user sees 5 standalone items", () => {
+  it("user sees 6 standalone items incl. guide", () => {
     const items = buildSidebar("user");
-    expect(items).toHaveLength(5);
+    expect(items).toHaveLength(6);
     expect(items.map((i) => i.href)).toEqual([
       "/home",
       "/booking",
       "/calendar",
       "/profile/bookings",
+      "/guide",
       "/profile",
     ]);
   });
 
-  it("approver sees 7 items incl. standalone รายงาน and one group", () => {
+  it("approver sees 8 items incl. standalone รายงาน, guide, and one group", () => {
     const items = buildSidebar("approver");
-    expect(items).toHaveLength(7);
+    expect(items).toHaveLength(8);
     // standalone reports present exactly once for approver
     expect(items.filter((i) => i.href === "/dashboard/reports")).toHaveLength(1);
     // one group entry (งานอนุมัติ) whose click target is the first tab
@@ -29,10 +30,9 @@ describe("buildSidebar", () => {
     ]);
   });
 
-  it("admin sees 8 items and no standalone รายงาน (it lives in a group)", () => {
+  it("admin sees 9 items incl. guide and no standalone รายงาน", () => {
     const items = buildSidebar("admin");
-    expect(items).toHaveLength(8);
-    // reports must NOT appear as a standalone sidebar item for admin
+    expect(items).toHaveLength(9);
     expect(items.filter((i) => i.href === "/dashboard/reports")).toHaveLength(0);
     expect(items.map((i) => i.label)).toEqual([
       "หน้าหลัก",
@@ -42,6 +42,7 @@ describe("buildSidebar", () => {
       "งานอนุมัติ",
       "จัดการระบบ",
       "รายงานและข้อมูล",
+      "คู่มือการใช้งาน",
       "โปรไฟล์",
     ]);
     const manage = items.find((i) => i.label === "จัดการระบบ");
