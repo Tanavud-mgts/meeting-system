@@ -27,6 +27,10 @@ const ROLE_LABEL: Record<string, string> = {
   admin: "ผู้ดูแลระบบ",
 };
 
+// LINE Official Account id ของระบบ (@521soden) — ใช้ทั้งลิงก์เพิ่มเพื่อนและแสดงเป็น ID ให้ค้นหาในแอป
+// ตั้ง NEXT_PUBLIC_LINE_OA_ID ใน env เพื่อ override ได้ (fallback = ค่าโปรดักชันปัจจุบัน)
+const LINE_OA_ID = process.env.NEXT_PUBLIC_LINE_OA_ID ?? "521soden";
+
 type EditForm = {
   full_name: string;
   staff_id: string;
@@ -446,37 +450,101 @@ export default function ProfilePage() {
             ) : lineOtp && otpSecondsLeft > 0 ? (
               <>
                 <p className="mt-1 text-sm text-text-secondary">
-                  1. เพิ่มเพื่อน LINE Official Account ของระบบ
-                  {process.env.NEXT_PUBLIC_LINE_OA_ID && (
-                    <>
-                      {" "}
-                      <a
-                        href={`https://line.me/R/ti/p/@${process.env.NEXT_PUBLIC_LINE_OA_ID}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-brand-primary hover:underline"
-                      >
-                        (เพิ่มเพื่อน)
-                      </a>
-                    </>
-                  )}
+                  เหลืออีกขั้นตอนเดียว — พิมพ์ข้อความด้านล่างในแชทกับ LINE Official Account
+                  ของระบบ (หากยังไม่ได้เพิ่มเพื่อน ค้นหา ID{" "}
+                  <span className="font-mono font-semibold text-text-primary">
+                    @{LINE_OA_ID}
+                  </span>{" "}
+                  หรือ{" "}
+                  <a
+                    href={`https://line.me/R/ti/p/@${LINE_OA_ID}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-primary hover:underline"
+                  >
+                    แตะที่นี่เพื่อเพิ่มเพื่อน
+                  </a>
+                  )
                 </p>
-                <p className="mt-1 text-sm text-text-secondary">
-                  2. พิมพ์ข้อความนี้ในแชท:
-                </p>
-                <p className="mt-1 text-lg font-semibold text-text-primary">
-                  /link {lineOtp}
-                </p>
-                <p className="mt-1 text-xs text-text-muted">
-                  รหัสหมดอายุใน {Math.floor(otpSecondsLeft / 60)}:
-                  {String(otpSecondsLeft % 60).padStart(2, "0")} นาที
-                </p>
+                <div className="mt-3 rounded-[2px] border border-border-sunken bg-surface-sunken p-4">
+                  <p className="text-xs font-bold tracking-wider text-text-muted">
+                    พิมพ์ข้อความนี้ในแชท
+                  </p>
+                  <p className="mt-1 select-all font-mono text-lg font-bold text-text-primary">
+                    /link {lineOtp}
+                  </p>
+                  <p className="mt-2 text-xs text-text-muted">
+                    รหัสหมดอายุใน {Math.floor(otpSecondsLeft / 60)}:
+                    {String(otpSecondsLeft % 60).padStart(2, "0")} นาที ·
+                    เมื่อเชื่อมต่อสำเร็จ หน้านี้จะแสดงสถานะ “เชื่อมต่อแล้ว” อัตโนมัติ
+                  </p>
+                </div>
               </>
             ) : (
               <>
                 <p className="mt-1 text-sm text-text-secondary">
-                  เชื่อมบัญชี LINE เพื่อรับการแจ้งเตือนคำขออนุมัติพร้อมปุ่มกดอนุมัติในแชท
+                  เชื่อมบัญชี LINE เพื่อรับการแจ้งเตือนคำขออนุมัติพร้อมปุ่มกดอนุมัติได้ทันทีในแชท
+                  (ยังสามารถอนุมัติผ่านเว็บได้ตามปกติแม้ไม่เชื่อมต่อ LINE)
                 </p>
+
+                <div className="mt-3 rounded-[2px] border border-border-sunken bg-surface-sunken p-4">
+                  <p className="text-xs font-bold tracking-wider text-text-muted">
+                    วิธีเชื่อมต่อ (ทำครั้งเดียว)
+                  </p>
+                  <ol className="mt-3 space-y-3">
+                    <li className="flex gap-3">
+                      <span className="bg-grad-brand flex h-5 w-5 flex-none items-center justify-center rounded-full text-xs font-bold text-text-on-primary">
+                        1
+                      </span>
+                      <span className="text-sm text-text-secondary">
+                        เพิ่มเพื่อน LINE Official Account ของระบบ — ค้นหา ID{" "}
+                        <span className="font-mono font-semibold text-text-primary">
+                          @{LINE_OA_ID}
+                        </span>{" "}
+                        <a
+                          href={`https://line.me/R/ti/p/@${LINE_OA_ID}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand-primary hover:underline"
+                        >
+                          (หรือแตะเพื่อเพิ่มเพื่อน)
+                        </a>
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="bg-grad-brand flex h-5 w-5 flex-none items-center justify-center rounded-full text-xs font-bold text-text-on-primary">
+                        2
+                      </span>
+                      <span className="text-sm text-text-secondary">
+                        กดปุ่ม “เชื่อมต่อ LINE” ด้านล่าง เพื่อรับรหัสเชื่อมต่อ 6 หลัก
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="bg-grad-brand flex h-5 w-5 flex-none items-center justify-center rounded-full text-xs font-bold text-text-on-primary">
+                        3
+                      </span>
+                      <span className="text-sm text-text-secondary">
+                        เปิดแชทกับ Official Account แล้วพิมพ์{" "}
+                        <span className="font-mono font-semibold text-text-primary">
+                          /link
+                        </span>{" "}
+                        เว้นวรรค ตามด้วยรหัส เช่น{" "}
+                        <span className="font-mono font-semibold text-text-primary">
+                          /link 123456
+                        </span>
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="bg-grad-brand flex h-5 w-5 flex-none items-center justify-center rounded-full text-xs font-bold text-text-on-primary">
+                        4
+                      </span>
+                      <span className="text-sm text-text-secondary">
+                        เมื่อระบบยืนยันสำเร็จ หน้านี้จะแสดงสถานะ “เชื่อมต่อแล้ว” อัตโนมัติ
+                      </span>
+                    </li>
+                  </ol>
+                </div>
+
                 {lineMessage && (
                   <p className="mt-2 text-sm text-text-secondary">{lineMessage}</p>
                 )}
