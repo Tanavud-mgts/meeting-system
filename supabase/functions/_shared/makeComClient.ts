@@ -97,8 +97,10 @@ async function postToMake(
 ): Promise<Record<string, unknown>> {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-webhook-secret": secret },
-    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+    // secret อยู่ใน body (ไม่ใช่ header) — Make filter อ่าน {{1.secret}} ได้ตรง ๆ
+    // ไม่ต้องยุ่งกับ Headers[] ที่ลำดับไม่คงที่ระหว่าง client
+    body: JSON.stringify({ ...payload, secret }),
   });
   const outcome = classifyMakeResponse(res.status);
   if (outcome !== "ok") throw outcome;
