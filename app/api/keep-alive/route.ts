@@ -41,6 +41,23 @@ export async function GET(request: Request) {
     error_detail: error?.message ?? null,
   });
 
+  // Trigger Make quota check (Edge Function) — await แบบ non-fatal:
+  // serverless ฆ่า floating promise หลัง return จึง await แต่ห่อ try/catch
+  // ไม่ให้กระทบผล keep-alive (จุดประสงค์หลักของ endpoint นี้)
+  try {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/check-make-quota`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      }
+    );
+  } catch (quotaErr) {
+    console.error("[keep-alive] check-make-quota trigger failed:", quotaErr);
+  }
+
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
