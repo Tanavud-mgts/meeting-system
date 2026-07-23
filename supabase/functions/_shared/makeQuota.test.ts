@@ -4,8 +4,11 @@ import {
   resolveLimit,
   tierFor,
   decideAction,
+  runQuotaCheck,
   type UsageRow,
+  type FetchQuotaFn,
 } from "./makeQuota.ts";
+import { makeClient, type DbCallContext } from "./mockClient.ts";
 
 describe("sumUsageSinceReset", () => {
   const rows: UsageRow[] = [
@@ -73,5 +76,103 @@ describe("decideAction", () => {
   it("tier ตกลง (รอบบิลใหม่) → reset", () => {
     expect(decideAction(95, 0)).toBe("reset");
     expect(decideAction(80, 0)).toBe("reset");
+  });
+});
+
+describe("runQuotaCheck", () => {
+  // responder: system_config select (id/admin_id/last_tier + notify config), update ok,
+  // notifications + integration_health insert ok
+  function responder(overrides: { lastTier?: number; updateError?: boolean } = {}) {
+    return (ctx: DbCallContext) => {
+      if (ctx.table === "system_config" && ctx.op === "select") {
+        return {
+          data: {
+            id: "cfg-1",
+            admin_id: "adm1",
+            make_quota_last_tier: overrides.lastTier ?? 0,
+            welpru_enabled: false,
+            discord_enabled: false,
+            line_enabled: false,
+            notification_settings: {},
+          },
+        };
+      }
+      if (ctx.table === "system_config" && ctx.op === "update") {
+        return overrides.updateError ? { error: { message: "update boom" } } : {};
+      }
+      return {}; // notifications / integration_health inserts
+    };
+  }
+  const snap = (used: number, limit = 1000): FetchQuotaFn => async () => ({ used, limit });
+
+  it("ข้าม tier 0→80 → update state ก่อน แล้ว insert notification + log success", async () => {
+    const { client, calls } = makeClient(responder());
+    await runQuotaCheck(client as never, snap(820));
+    const upd = calls.find((c: DbCallContext) => c.table === "system_config" && c.op === "update");
+    expect(upd?.payload).toEqual({ make_quota_last_tier: 80 });
+    const notif = calls.find(
+      (c: DbCallContext) => c.table === "notifications" && c.op === "insert"
+    );
+    expect(notif?.payload).toMatchObject({ event_key: "make_quota_warning", user_id: "adm1" });
+    expect(String(notif?.payload?.body)).toContain("820/1000");
+    // state-first: update ต้องมาก่อน notification ใน call order
+    const updIdx = calls.findIndex((c: DbCallContext) => c.op === "update");
+    const notifIdx = calls.findIndex((c: DbCallContext) => c.table === "notifications");
+    expect(updIdx).toBeLessThan(notifIdx);
+    const log = calls.find((c: DbCallContext) => c.table === "integration_health");
+    expect(log?.payload).toMatchObject({
+      service: "make_com",
+      status: "success",
+      payload: { kind: "quota_check", used: 820, limit: 1000 },
+    });
+  });
+
+  it("tier เท่าเดิม (80→80) → ไม่ update ไม่แจ้ง แต่ log success", async () => {
+    const { client, calls } = makeClient(responder({ lastTier: 80 }));
+    await runQuotaCheck(client as never, snap(850));
+    expect(calls.some((c: DbCallContext) => c.op === "update")).toBe(false);
+    expect(calls.some((c: DbCallContext) => c.table === "notifications")).toBe(false);
+    expect(calls.some((c: DbCallContext) => c.table === "integration_health")).toBe(true);
+  });
+
+  it("tier ตก (95→0 รอบบิลใหม่) → update state แต่ไม่แจ้ง", async () => {
+    const { client, calls } = makeClient(responder({ lastTier: 95 }));
+    await runQuotaCheck(client as never, snap(50));
+    const upd = calls.find((c: DbCallContext) => c.op === "update");
+    expect(upd?.payload).toEqual({ make_quota_last_tier: 0 });
+    expect(calls.some((c: DbCallContext) => c.table === "notifications")).toBe(false);
+  });
+
+  it("update state พัง → ห้ามแจ้ง (log failed)", async () => {
+    const { client, calls } = makeClient(responder({ updateError: true }));
+    await runQuotaCheck(client as never, snap(999));
+    expect(calls.some((c: DbCallContext) => c.table === "notifications")).toBe(false);
+    const log = calls.find((c: DbCallContext) => c.table === "integration_health");
+    expect(log?.payload).toMatchObject({ service: "make_com", status: "failed" });
+  });
+
+  it("fetchQuota คืน null (secrets ไม่ตั้ง) → เงียบสนิท ไม่ log ไม่แจ้ง", async () => {
+    const { client, calls } = makeClient(responder());
+    await runQuotaCheck(client as never, async () => null);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("fetchQuota throw → log failed ไม่แจ้ง ไม่ throw", async () => {
+    const { client, calls } = makeClient(responder());
+    await expect(
+      runQuotaCheck(client as never, async () => {
+        throw new Error("make api down");
+      })
+    ).resolves.toBeUndefined();
+    const log = calls.find((c: DbCallContext) => c.table === "integration_health");
+    expect(log?.payload).toMatchObject({ service: "make_com", status: "failed" });
+    expect(calls.some((c: DbCallContext) => c.table === "notifications")).toBe(false);
+  });
+
+  it("never-throw: db พังทุก call ก็ไม่ throw", async () => {
+    const { client } = makeClient(() => {
+      throw new Error("db down");
+    });
+    await expect(runQuotaCheck(client as never, snap(999))).resolves.toBeUndefined();
   });
 });
