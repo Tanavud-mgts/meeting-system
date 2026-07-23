@@ -41,7 +41,7 @@ const MABBR = [
 ];
 const DFULL = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
 const DABBR = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
-const WEEKDAY_HEADS = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
+const WEEKDAY_HEADS = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
 const VIEW_LABEL: Record<ViewMode, string> = {
   day: "วัน",
   week: "สัปดาห์",
@@ -87,7 +87,8 @@ function dow(o: YMD): number {
   return new Date(o.y, o.m, o.d).getDay();
 }
 function weekStart(o: YMD): YMD {
-  return addDays(o, -((dow(o) + 6) % 7));
+  // เริ่มต้นสัปดาห์ที่วันอาทิตย์ (dow: อาทิตย์=0 … เสาร์=6)
+  return addDays(o, -dow(o));
 }
 function fullDateLabel(o: YMD): string {
   return `${DFULL[dow(o)]} ${o.d} ${MONTHS[o.m]} ${o.y + 543}`;
@@ -245,6 +246,13 @@ export default function CalendarPage() {
   const todayKey = keyOf(fromDate(new Date()));
   const buddhistYear = cur.y + 543;
 
+  // วันหยุดที่ตั้งค่าไว้ใน system_config (รูปแบบ "YYYY-MM-DD")
+  const holidaySet = useMemo(
+    () => new Set(config?.holidays ?? []),
+    [config]
+  );
+  const focusIsHoliday = holidaySet.has(keyOf(cur));
+
   function go(dir: number) {
     if (view === "month") setCur(addMonths(cur, dir));
     else if (view === "week") setCur(addDays(cur, dir * 7));
@@ -272,13 +280,14 @@ export default function CalendarPage() {
     const first = { y: cur.y, m: cur.m, d: 1 };
     const start = weekStart(first);
     const daysInMonth = new Date(cur.y, cur.m + 1, 0).getDate();
-    const offset = (dow(first) + 6) % 7;
+    const offset = dow(first);
     const nWeeks = Math.ceil((offset + daysInMonth) / 7);
     const rows: {
       ymd: YMD;
       key: string;
       inMonth: boolean;
       isToday: boolean;
+      isHoliday: boolean;
       events: Booking[];
     }[][] = [];
     for (let w = 0; w < nWeeks; w++) {
@@ -291,13 +300,14 @@ export default function CalendarPage() {
           key,
           inMonth: cell.m === cur.m,
           isToday: key === todayKey,
+          isHoliday: holidaySet.has(key),
           events: byDay.get(key) ?? [],
         });
       }
       rows.push(days);
     }
     return rows;
-  }, [isMonth, cur, byDay, todayKey]);
+  }, [isMonth, cur, byDay, todayKey, holidaySet]);
 
   // ===== Timeline (สัปดาห์/วัน) =====
   const startHour = config?.office_start_hour ?? 0;
@@ -317,6 +327,7 @@ export default function CalendarPage() {
     title: string;
     sub: string | null;
     isToday: boolean;
+    isHoliday: boolean;
     blocks: {
       booking: Booking;
       sub: string;
@@ -362,6 +373,7 @@ export default function CalendarPage() {
         title: r.name,
         sub: null,
         isToday: false,
+        isHoliday: false,
         blocks: mkBlocks(
           dayBookings.filter((b) => b.roomId === r.id),
           (b) => b.requesterName
@@ -379,11 +391,12 @@ export default function CalendarPage() {
         title: DABBR[dow(day)],
         sub: `${day.d} ${MABBR[day.m]}`,
         isToday: ck === todayKey,
+        isHoliday: holidaySet.has(ck),
         blocks: mkBlocks(byDay.get(ck) ?? [], (b) => b.roomName),
       });
     }
     return cols;
-  }, [isGrid, config, view, cur, byDay, rooms, roomFilter, startHour, endHour, todayKey]);
+  }, [isGrid, config, view, cur, byDay, rooms, roomFilter, startHour, endHour, todayKey, holidaySet]);
 
   // ===== Agenda (มือถือ) =====
   const agendaGroups = useMemo(() => {
@@ -399,9 +412,13 @@ export default function CalendarPage() {
       for (let d = 1; d <= dim; d++) dates.push({ y: cur.y, m: cur.m, d });
     }
     return dates
-      .map((dt) => ({ label: fullDateLabel(dt), items: byDay.get(keyOf(dt)) ?? [] }))
+      .map((dt) => ({
+        label: fullDateLabel(dt),
+        holiday: holidaySet.has(keyOf(dt)),
+        items: byDay.get(keyOf(dt)) ?? [],
+      }))
       .filter((g) => g.items.length > 0);
-  }, [isAgenda, view, cur, byDay]);
+  }, [isAgenda, view, cur, byDay, holidaySet]);
 
   const selectedStyle = selected ? STATUS_STYLE[selected.status] : null;
   const selectedYMD = selected
@@ -502,7 +519,19 @@ export default function CalendarPage() {
               <span className="h-3.5 w-3.5 rounded border-l-[3px] border-warning-accent bg-warning-surface" />
               รออนุมัติ
             </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3.5 w-3.5 rounded border border-danger-border bg-danger-surface" />
+              วันหยุด
+            </span>
           </div>
+
+          {/* แถบแจ้งวันหยุด (มุมมองวัน) */}
+          {view === "day" && focusIsHoliday && (
+            <div className="mb-3.5 flex items-center gap-2 rounded-[2px] border border-danger-border bg-danger-surface px-3.5 py-2 text-sm font-bold text-danger-text">
+              <span className="h-2 w-2 flex-none rounded-full bg-danger-solid" />
+              วันหยุด — {fullDateLabel(cur)}
+            </div>
+          )}
 
           {/* มุมมองเดือน */}
           {isMonth && (
@@ -530,7 +559,11 @@ export default function CalendarPage() {
                         setCur(c.ymd);
                       }}
                       className={`flex min-h-[104px] cursor-pointer flex-col gap-1 border-r border-neutral-100 p-1.5 pb-2 text-left last:border-r-0 ${
-                        c.inMonth ? "bg-surface-card" : "bg-surface-sunken"
+                        c.isHoliday
+                          ? "bg-danger-surface/60"
+                          : c.inMonth
+                            ? "bg-surface-card"
+                            : "bg-surface-sunken"
                       }`}
                     >
                       <span className="flex items-center justify-between">
@@ -538,14 +571,21 @@ export default function CalendarPage() {
                           className={`flex h-[25px] w-[25px] items-center justify-center rounded-pill text-sm font-semibold ${
                             c.isToday
                               ? "bg-brand-primary text-text-on-primary"
-                              : c.inMonth
-                                ? "text-text-primary"
-                                : "text-neutral-400"
+                              : c.isHoliday
+                                ? "text-danger-text"
+                                : c.inMonth
+                                  ? "text-text-primary"
+                                  : "text-neutral-400"
                           }`}
                         >
                           {c.ymd.d}
                         </span>
-                        <span className="flex gap-1">
+                        <span className="flex items-center gap-1">
+                          {c.isHoliday && (
+                            <span className="rounded-sm bg-danger-surface px-1.5 text-xs font-bold text-danger-text">
+                              หยุด
+                            </span>
+                          )}
                           {c.events.some((b) => b.status === "approved") && (
                             <span className="rounded-sm bg-success-surface px-1.5 text-xs font-bold text-success-text">
                               {c.events.filter((b) => b.status === "approved").length}
@@ -592,20 +632,31 @@ export default function CalendarPage() {
                   <div
                     key={col.key}
                     className={`min-w-0 flex-1 border-l border-neutral-100 px-1.5 py-2 text-center ${
-                      col.isToday ? "bg-brand-primary/10" : ""
+                      col.isToday
+                        ? "bg-brand-primary/10"
+                        : col.isHoliday
+                          ? "bg-danger-surface/60"
+                          : ""
                     }`}
                   >
                     <div
                       className={`overflow-hidden text-ellipsis whitespace-nowrap text-sm font-bold ${
                         col.isToday
                           ? "text-brand-primary-strong"
-                          : "text-text-primary"
+                          : col.isHoliday
+                            ? "text-danger-text"
+                            : "text-text-primary"
                       }`}
                     >
                       {col.title}
                     </div>
                     {col.sub && (
                       <div className="text-xs text-text-muted">{col.sub}</div>
+                    )}
+                    {col.isHoliday && (
+                      <div className="text-xs font-bold text-danger-text">
+                        วันหยุด
+                      </div>
                     )}
                   </div>
                 ))}
@@ -628,7 +679,9 @@ export default function CalendarPage() {
                 {columns.map((col) => (
                   <div
                     key={col.key}
-                    className="relative min-w-0 flex-1 border-l border-neutral-100"
+                    className={`relative min-w-0 flex-1 border-l border-neutral-100 ${
+                      col.isHoliday ? "bg-danger-surface/40" : ""
+                    }`}
                     style={{
                       height: gridHeight,
                       backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${HOUR_HEIGHT - 1}px, var(--color-neutral-100) ${HOUR_HEIGHT - 1}px, var(--color-neutral-100) ${HOUR_HEIGHT}px)`,
@@ -671,8 +724,13 @@ export default function CalendarPage() {
             <div className="flex flex-col gap-4">
               {agendaGroups.map((g) => (
                 <div key={g.label}>
-                  <div className="mx-0.5 mb-2 text-base font-bold text-neutral-700">
+                  <div className="mx-0.5 mb-2 flex items-center gap-2 text-base font-bold text-neutral-700">
                     {g.label}
+                    {g.holiday && (
+                      <span className="rounded-pill bg-danger-surface px-2 py-0.5 text-xs font-bold text-danger-text">
+                        วันหยุด
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-col gap-2.5">
                     {g.items.map((b) => (
