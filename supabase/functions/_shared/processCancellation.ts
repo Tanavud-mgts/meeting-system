@@ -5,6 +5,7 @@ import {
   ConflictError,
   ValidationError,
 } from "./errors.ts";
+import { syncCalendarDelete } from "./makeComClient.ts";
 
 export type CancellationRole = "admin" | "approver";
 export type CancellationDecision = "approve" | "reject";
@@ -158,7 +159,7 @@ export async function decideCancellation(
 
     if (insertError) throw insertError;
 
-    triggerCalendarDelete(bookingId);
+    await syncCalendarDelete(client, bookingId);
 
     return { bookingId, newStatus: "cancelled" };
   }
@@ -186,12 +187,4 @@ export async function decideCancellation(
   if (activityError) throw activityError;
 
   return { bookingId, newStatus: "approved" };
-}
-
-// Extension point: เมื่อ Make.com webhook พร้อมใช้งาน (มี MAKE_WEBHOOK_URL
-// secret ตั้งไว้แล้ว) ให้เรียก withRetry() + logIntegration() ที่นี่เพื่อลบ
-// Google Calendar event ด้วย gcal_event_id — ยังไม่เรียกจริงในตอนนี้ตามที่
-// ตกลงกันไว้ (ดู Global Constraints)
-function triggerCalendarDelete(_bookingId: string): void {
-  // TODO (future track): เรียก Make.com webhook จริง
 }

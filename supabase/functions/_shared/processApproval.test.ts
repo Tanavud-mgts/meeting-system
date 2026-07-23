@@ -28,6 +28,9 @@ function responderFor(
     if (ctx.table === "bookings" && ctx.op === "update") {
       return overrides.updateBooking ?? {};
     }
+    if (ctx.table === "booking_detail" && ctx.op === "select") {
+      return { data: null };
+    }
     throw new Error(`unexpected db call: ${ctx.table}.${ctx.op}`);
   };
 }
@@ -98,6 +101,7 @@ describe("processApproval", () => {
     expect(result).toMatchObject({ currentStep: 3, finalStatus: "approved" });
     const update = calls.find((c) => c.table === "bookings" && c.op === "update");
     expect(update?.payload).toEqual({ current_step: 3, final_status: "approved" });
+    expect(calls.some((c) => c.table === "booking_detail")).toBe(true);
   });
 
   it("terminates the chain immediately on rejection", async () => {

@@ -12,7 +12,7 @@
 - **Backend:** Supabase (PostgreSQL, Auth, RLS, Edge Functions, Realtime)
 - **Auth:** Google OAuth จำกัดเฉพาะ `@g.lpru.ac.th` (2 ชั้น: Google Consent Screen + Auth Hook + Middleware)
 - **Notification:** LINE Messaging API (Flex Message + Postback) — เป็น supplement เท่านั้น ไม่ใช่ primary interface
-- **Automation:** Make.com (Free Plan — 2 scenarios, 1,000 credits/เดือน) — สร้าง/ลบ Google Calendar event + Discord notify
+- **Automation:** Make.com (Free Plan — 2 scenarios, 1,000 credits/เดือน) — สร้าง/ลบ Google Calendar event เท่านั้น (Discord แจ้งเตือนยิงตรงจาก Edge Function)
 - **Hosting:** Vercel (Hobby Free Plan) — ยอมรับความเสี่ยงเรื่อง ToS non-commercial แล้ว มี monitoring ทดแทน
 - **Font:** Sarabun (ภาษาไทย)
 - **Testing:** Vitest (unit/integration) + Playwright (E2E)
@@ -84,7 +84,7 @@ npx playwright test             # รัน E2E tests
 | Service | Limit | ผลกระทบต่อโค้ด |
 |---|---|---|
 | Supabase | 500MB storage, หยุดอัตโนมัติถ้าไม่มี activity 7 วัน | ต้องมี keep-alive ping ทุก 5 วัน |
-| Make.com | 2 active scenarios, 1,000 credits/เดือน | ใช้ Router module แยก action ภายใน scenario เดียว ไม่สร้าง scenario ใหม่ |
+| Make.com | 2 active scenarios, 1,000 credits/เดือน | Google Calendar เท่านั้น (Discord ยิงตรงจาก Edge Function) — Router แยก create/delete ใน scenario เดียว รับ gcal_event_id กลับทาง webhook response |
 | LINE OA | 500 push messages/เดือน | Reply message ไม่จำกัด แต่ push ต้องประหยัด — เตือน Admin เมื่อใกล้เต็ม |
 | Vercel Hobby | Function timeout 10 วินาที | Export function ที่ใช้เวลานานให้เรียก Supabase Edge Function ตรง ไม่ผ่าน Next.js API Route |
 

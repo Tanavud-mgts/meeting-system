@@ -5,6 +5,7 @@ import {
   ForbiddenError,
   ValidationError,
 } from "./errors.ts";
+import { syncCalendarCreate } from "./makeComClient.ts";
 
 export type ApprovalAction = "approved" | "rejected";
 
@@ -93,15 +94,8 @@ export async function processApproval(
       .eq("id", bookingId);
     if (updateError) throw updateError;
 
-    triggerCalendarSync(bookingId);
+    await syncCalendarCreate(client, bookingId);
   }
 
   return { bookingId, step, action, currentStep, finalStatus };
-}
-
-// Extension point: เมื่อ Make.com webhook พร้อมใช้งาน (มี MAKE_WEBHOOK_URL
-// secret ตั้งไว้แล้ว) ให้เรียก withRetry() + logIntegration() ที่นี่เพื่อสร้าง
-// Google Calendar event — ยังไม่เรียกจริงในตอนนี้ตามที่ตกลงกันไว้
-function triggerCalendarSync(_bookingId: string): void {
-  // TODO (future track): เรียก Make.com webhook จริง
 }

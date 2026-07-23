@@ -4,6 +4,7 @@ import {
   formatThaiDate,
   formatThaiTimeRange,
   buildNotification,
+  buildDiscordMessage,
   notifyAndLog,
 } from "./notify.ts";
 import { makeClient, type DbCallContext } from "./mockClient.ts";
@@ -444,5 +445,34 @@ describe("notifyAndLog — LINE channel", () => {
         eventKey: "booking_submitted", recipients: [{ userId: "adm1" }], variables: vars, lineApproval,
       })
     ).resolves.toBeUndefined();
+  });
+});
+
+describe("calendar_sync_failed event (registry)", () => {
+  it("buildNotification มี default title/body/link", () => {
+    const n = buildNotification("calendar_sync_failed", {
+      ref_id: "BK-2026-0042",
+      room: "ห้องประชุมชั้น 2",
+      date: "25 ก.ค. 69",
+      action: "สร้าง",
+    });
+    expect(n.title).toBe("⚠️ ซิงก์ปฏิทินไม่สำเร็จ");
+    expect(n.body).toContain("BK-2026-0042");
+    expect(n.body).toContain("สร้าง");
+    expect(n.link).toBe("/dashboard/integrations");
+  });
+
+  it("Discord template แทนค่าครบทุก placeholder (ไม่มี {..} ค้าง)", () => {
+    const msg = buildDiscordMessage("calendar_sync_failed", {
+      ref_id: "BK-2026-0042",
+      room: "ห้องประชุมชั้น 2",
+      date: "25 ก.ค. 69",
+      action: "สร้าง",
+    });
+    expect(msg).toContain("BK-2026-0042");
+    expect(msg).toContain("ห้องประชุมชั้น 2");
+    expect(msg).toContain("สร้าง");
+    // จับ placeholder ที่สะกดผิด/ไม่ตรงตัวแปร (เช่น {actions}) — ต้องไม่มี {..} หลงเหลือ
+    expect(msg).not.toMatch(/\{[a-z_]+\}/);
   });
 });
