@@ -164,7 +164,7 @@ const DISCORD_MESSAGE_TEMPLATES: Record<EventKey, string> = {
   calendar_sync_failed: "⚠️ ปฏิทินซิงก์ไม่สำเร็จ ({action}) — [{ref_id}] {room} · {date}",
 };
 
-function buildDiscordMessage(eventKey: EventKey, vars: Record<string, string>): string {
+export function buildDiscordMessage(eventKey: EventKey, vars: Record<string, string>): string {
   return applyTemplate(DISCORD_MESSAGE_TEMPLATES[eventKey], vars);
 }
 
