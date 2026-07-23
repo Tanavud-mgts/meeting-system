@@ -476,3 +476,23 @@ describe("calendar_sync_failed event (registry)", () => {
     expect(msg).not.toMatch(/\{[a-z_]+\}/);
   });
 });
+
+describe("make_quota_warning event (registry)", () => {
+  const vars = { used: "820", limit: "1000", percent: "82" };
+
+  it("buildNotification มี default title/body/link", () => {
+    const n = buildNotification("make_quota_warning", vars);
+    expect(n.title).toBe("⚠️ โควตา Make.com ใกล้เต็ม");
+    expect(n.body).toBe(
+      "เดือนนี้ใช้ไปแล้ว 820/1000 operations (82%) เมื่อครบโควตาการซิงก์ปฏิทินจะหยุดจนถึงรอบถัดไป"
+    );
+    expect(n.link).toBe("/dashboard/integrations");
+  });
+
+  it("Discord template แทนค่าครบ ไม่มี {..} ค้าง", () => {
+    const msg = buildDiscordMessage("make_quota_warning", vars);
+    expect(msg).toContain("820/1000");
+    expect(msg).toContain("82%");
+    expect(msg).not.toMatch(/\{[a-z_]+\}/);
+  });
+});

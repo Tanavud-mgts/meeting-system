@@ -52,7 +52,8 @@ export type EventKey =
   | "cancellation_denied"
   | "booking_cancelled"
   | "line_quota_warning"
-  | "calendar_sync_failed";
+  | "calendar_sync_failed"
+  | "make_quota_warning";
 
 interface EventDefault {
   title: string;
@@ -111,6 +112,11 @@ const EVENT_DEFAULTS: Record<EventKey, EventDefault> = {
     body: "การจอง [{ref_id}] {room} วันที่ {date} — ซิงก์ปฏิทิน ({action}) ไม่สำเร็จ ระบบบันทึกการจองไว้ถูกต้องแล้ว โปรดตรวจสอบที่หน้าเชื่อมต่อระบบ",
     link: "/dashboard/integrations",
   },
+  make_quota_warning: {
+    title: "⚠️ โควตา Make.com ใกล้เต็ม",
+    body: "เดือนนี้ใช้ไปแล้ว {used}/{limit} operations ({percent}%) เมื่อครบโควตาการซิงก์ปฏิทินจะหยุดจนถึงรอบถัดไป",
+    link: "/dashboard/integrations",
+  },
 };
 
 // รายชื่อ event keys ทั้งหมด (source of truth สำหรับ validator/UI) — ต้องครบตาม EventKey
@@ -125,6 +131,7 @@ export const EVENT_KEYS: EventKey[] = [
   "booking_cancelled",
   "line_quota_warning",
   "calendar_sync_failed",
+  "make_quota_warning",
 ];
 
 export interface EventOverride {
@@ -162,6 +169,7 @@ const DISCORD_MESSAGE_TEMPLATES: Record<EventKey, string> = {
   booking_cancelled: "⚠️ Admin ยกเลิก — {room} · {date}",
   line_quota_warning: "⚠️ LINE quota: {sent}/500",
   calendar_sync_failed: "⚠️ ปฏิทินซิงก์ไม่สำเร็จ ({action}) — [{ref_id}] {room} · {date}",
+  make_quota_warning: "⚠️ Make.com quota: {used}/{limit} ({percent}%)",
 };
 
 export function buildDiscordMessage(eventKey: EventKey, vars: Record<string, string>): string {
