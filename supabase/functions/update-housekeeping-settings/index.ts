@@ -21,6 +21,21 @@ Deno.serve(
     } = await authClient.auth.getUser();
     if (!user) throw new UnauthorizedError("ไม่พบข้อมูลผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่");
 
+    // ตรวจสิทธิ์ admin ก่อนแตะ body (mirror update-notification-settings)
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: caller, error: callerError } = await adminClient
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    if (callerError || !caller || caller.role !== "admin") {
+      throw new ForbiddenError("ท่านไม่มีสิทธิ์แก้ไขการตั้งค่านี้");
+    }
+
     const body: Body = await req.json();
 
     if (typeof body.housekeeping_enabled !== "boolean") {
@@ -39,20 +54,6 @@ Deno.serve(
         : null;
     if (body.housekeeping_enabled && !groupId) {
       throw new ValidationError("กรุณากรอก LINE Group ID ก่อนเปิดใช้งาน");
-    }
-
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const { data: caller, error: callerError } = await adminClient
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    if (callerError || !caller || caller.role !== "admin") {
-      throw new ForbiddenError("ท่านไม่มีสิทธิ์แก้ไขการตั้งค่านี้");
     }
 
     const { data: config, error: configError } = await adminClient
