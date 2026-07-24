@@ -71,7 +71,6 @@ function itemLines(r: HousekeepingRow): string {
   if (r.notes_for_staff && r.notes_for_staff.trim()) {
     lines.push(`📝 ${r.notes_for_staff.trim()}`);
   }
-  lines.push(`[${r.ref_id}]`);
   return lines.join("\n");
 }
 
@@ -81,7 +80,7 @@ export function buildDigestMessage(
 ): string {
   const dateLabel = formatThaiDate(forDateIso);
   if (rows.length === 0) {
-    return `📋 ห้องประชุมพรุ่งนี้ (${dateLabel})\nพรุ่งนี้ (${dateLabel}) ไม่มีการใช้ห้องประชุม`;
+    return `📋 ห้องประชุมพรุ่งนี้ (${dateLabel})\nไม่มีการใช้ห้องประชุม`;
   }
   const header = `📋 ห้องประชุมพรุ่งนี้ (${dateLabel}) — ${rows.length} รายการ`;
   const items = rows.map((r, i) => {
@@ -94,7 +93,6 @@ export function buildDigestMessage(
     if (r.notes_for_staff && r.notes_for_staff.trim()) {
       body.push(`   📝 ${r.notes_for_staff.trim()}`);
     }
-    body.push(`   [${r.ref_id}]`);
     return body.join("\n");
   });
   return `${header}\n\n${items.join("\n\n")}`;
@@ -115,7 +113,6 @@ export function buildCancelledMessage(
   const lines = [
     `🕐 ${formatThaiTimeRange(r.start_time, r.end_time)} | ${r.room_name}`,
     r.title,
-    `[${r.ref_id}]`,
     "ไม่ต้องเตรียมห้องนี้แล้ว",
   ];
   return `${head}\n${lines.join("\n")}`;
