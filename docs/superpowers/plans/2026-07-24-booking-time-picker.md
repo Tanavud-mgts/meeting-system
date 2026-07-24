@@ -240,33 +240,41 @@ git commit -m "feat(booking): replace time inputs with 30-min dropdowns bound to
 
 ---
 
-### Task 3: แก้ trigger `validate_booking_hours` (migration 015)
+### Task 3: แก้ trigger `validate_booking_hours` (migration 025)
 
 **Files:**
-- Create: `supabase/migrations/015_fix_validate_booking_hours.sql`
+- Create: `supabase/migrations/025_fix_validate_booking_hours.sql`
 
 **Interfaces:**
 - Consumes: `system_config.office_start_hour`, `office_end_hour`, `holidays`; trigger `trg_validate_hours` เดิม (ชี้ที่ฟังก์ชันนี้อยู่แล้ว)
 - Produces: ฟังก์ชัน `validate_booking_hours()` เวอร์ชันแก้ไข
 
+**หมายเหตุสำคัญ (controller correction):**
+- migration ปัจจุบันในโปรเจกต์ไปถึง `024` แล้ว (และมี `015_*` อยู่สองไฟล์) → หมายเลขว่างถัดไปคือ **025** ไม่ใช่ 015
+- `016_harden_functions.sql` เคยรัน `ALTER FUNCTION public.validate_booking_hours() SET search_path = public` เป็น security hardening (Supabase advisor) — `CREATE OR REPLACE` ใน Postgres จะ**ล้าง** setting นี้ทิ้ง ดังนั้นต้องใส่ `SET search_path = public` ในนิยามฟังก์ชันใหม่ด้วย มิฉะนั้นจะ regress การ harden
+
 - [ ] **Step 1: ตรวจ migration ปัจจุบันก่อน**
 
-ใช้ MCP tool `list_migrations` ยืนยันว่า `015` ยังไม่ถูกใช้ และ 011 รันแล้ว
+ใช้ MCP tool `list_migrations` ยืนยันสถานะจริง (คาดว่าไปถึง 024) และเลือกหมายเลขว่างถัดไป = 025
 
 - [ ] **Step 2: เขียนไฟล์ migration**
 
-`supabase/migrations/015_fix_validate_booking_hours.sql`:
+`supabase/migrations/025_fix_validate_booking_hours.sql`:
 
 ```sql
 -- ============================================================
--- 015_fix_validate_booking_hours.sql
+-- 025_fix_validate_booking_hours.sql
 -- แก้ validate_booking_hours() ให้เทียบเวลาเต็มรวมนาที (เดิมเทียบแค่ชั่วโมง)
 -- + เพิ่มเช็ค end > start และกันจองข้ามวัน
 -- CREATE OR REPLACE เท่านั้น ไม่ DROP (Critical Rule #8)
+-- ต้องคง `SET search_path = public` ที่ 016_harden_functions เคยตั้งไว้
+-- (CREATE OR REPLACE จะล้าง per-function config ถ้าไม่ระบุซ้ำ)
 -- trigger trg_validate_hours เดิมชี้ที่ฟังก์ชันนี้อยู่แล้ว
 -- ============================================================
 CREATE OR REPLACE FUNCTION validate_booking_hours()
-RETURNS trigger LANGUAGE plpgsql AS $$
+RETURNS trigger LANGUAGE plpgsql
+SET search_path = public
+AS $$
 DECLARE
   cfg          record;
   booking_date date;
@@ -320,11 +328,11 @@ $$;
 
 - [ ] **Step 3: apply migration**
 
-ใช้ MCP tool `apply_migration` ชื่อ `015_fix_validate_booking_hours` เนื้อหาตาม Step 2
+ใช้ MCP tool `apply_migration` ชื่อ `025_fix_validate_booking_hours` เนื้อหาตาม Step 2
 
 - [ ] **Step 4: ตรวจ advisors**
 
-ใช้ MCP tool `get_advisors` (type `security` และ `performance`) ยืนยันว่าไม่มี issue ใหม่จากการเปลี่ยนฟังก์ชัน
+ใช้ MCP tool `get_advisors` (type `security` และ `performance`) ยืนยันว่าไม่มี issue ใหม่ — โดยเฉพาะต้องไม่มี "function_search_path_mutable" สำหรับ `validate_booking_hours` (ถ้ามีแปลว่าลืมใส่ `SET search_path = public`)
 
 - [ ] **Step 5: Smoke test ด้วย `execute_sql` (rollback ทุกเคส)**
 
@@ -358,7 +366,7 @@ Expected: เคสแรกไม่ error, สองเคสหลัง RAIS
 - [ ] **Step 6: Commit ไฟล์ migration**
 
 ```bash
-git add supabase/migrations/015_fix_validate_booking_hours.sql
+git add supabase/migrations/025_fix_validate_booking_hours.sql
 git commit -m "fix(db): validate booking hours by full time, block end<=start and cross-day"
 ```
 
