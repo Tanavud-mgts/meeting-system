@@ -41,6 +41,20 @@ export function parsePostbackData(
   return { action, token };
 }
 
+// ── Group/room context detection — testable ──
+// true = event มาจากกลุ่ม/ห้อง (ไม่ใช่แชท 1:1) → OA ต้องไม่ตอบ กัน noise ในกลุ่ม
+export function isGroupContext(
+  source?: { type?: string; groupId?: string; roomId?: string }
+): boolean {
+  if (!source) return false;
+  return (
+    source.type === "group" ||
+    source.type === "room" ||
+    Boolean(source.groupId) ||
+    Boolean(source.roomId)
+  );
+}
+
 // ── Flex card — testable ──
 export function buildApprovalFlex(
   vars: { booker: string; room: string; date: string; time: string },
