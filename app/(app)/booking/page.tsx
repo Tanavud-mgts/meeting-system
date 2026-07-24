@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { buildTimeSlots, startOptions, endOptions } from "@/lib/booking/timeSlots";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -140,12 +141,11 @@ export default function BookingPage() {
     loadConfig();
   }, []);
 
-  const minTime = config
-    ? `${String(config.office_start_hour).padStart(2, "0")}:00`
-    : undefined;
-  const maxTime = config
-    ? `${String(config.office_end_hour).padStart(2, "0")}:00`
-    : undefined;
+  const timeSlots = config
+    ? buildTimeSlots(config.office_start_hour, config.office_end_hour)
+    : [];
+  const startOpts = startOptions(timeSlots);
+  const endOpts = endOptions(timeSlots, startTime);
   const isHoliday = config ? config.holidays.includes(date) : false;
 
   async function handleSearch() {
@@ -187,6 +187,14 @@ export default function BookingPage() {
     );
     setHasSearched(true);
     setSearching(false);
+  }
+
+  function handleStartChange(value: string) {
+    setStartTime(value);
+    // ถ้าเวลาจบเดิมไม่มากกว่าเวลาเริ่มใหม่แล้ว ให้รีเซ็ต
+    if (endTime && endTime <= value) {
+      setEndTime("");
+    }
   }
 
   function handleSelectRoom(room: Room) {
@@ -309,25 +317,35 @@ export default function BookingPage() {
                   </label>
                   <label className="flex flex-col gap-1 text-sm font-bold text-neutral-700">
                     เวลาเริ่ม
-                    <input
-                      type="time"
+                    <select
                       value={startTime}
-                      min={minTime}
-                      max={maxTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="rounded-sm border-[1.5px] border-neutral-300 px-3 py-2 font-normal"
-                    />
+                      disabled={!config}
+                      onChange={(e) => handleStartChange(e.target.value)}
+                      className="rounded-sm border-[1.5px] border-neutral-300 px-3 py-2 font-normal disabled:bg-neutral-150 disabled:text-neutral-400"
+                    >
+                      <option value="">เลือกเวลา</option>
+                      {startOpts.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="flex flex-col gap-1 text-sm font-bold text-neutral-700">
                     เวลาจบ
-                    <input
-                      type="time"
+                    <select
                       value={endTime}
-                      min={minTime}
-                      max={maxTime}
+                      disabled={!config || !startTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="rounded-sm border-[1.5px] border-neutral-300 px-3 py-2 font-normal"
-                    />
+                      className="rounded-sm border-[1.5px] border-neutral-300 px-3 py-2 font-normal disabled:bg-neutral-150 disabled:text-neutral-400"
+                    >
+                      <option value="">เลือกเวลา</option>
+                      {endOpts.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="flex flex-col gap-1 text-sm font-bold text-neutral-700">
                     จำนวนผู้เข้าร่วม
