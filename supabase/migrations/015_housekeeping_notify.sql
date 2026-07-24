@@ -15,6 +15,9 @@ ALTER TABLE system_config ADD COLUMN IF NOT EXISTS housekeeping_digest_hour     
 ALTER TABLE system_config ADD COLUMN IF NOT EXISTS housekeeping_digest_last_sent_on date;
 
 -- 3. เพิ่ม notes_for_staff เข้า view booking_detail (recreate — เดิมมี activity/attendees/department แล้ว)
+--    หมายเหตุ: CREATE OR REPLACE VIEW เพิ่มคอลัมน์ได้เฉพาะ "ต่อท้าย" เท่านั้น
+--    ห้ามแทรกกลาง/สลับตำแหน่งคอลัมน์เดิม (Postgres 42P16) — notes_for_staff จึงอยู่ท้ายสุด
+--    โค้ดทุกจุด select by name ลำดับคอลัมน์ไม่กระทบการใช้งาน
 CREATE OR REPLACE VIEW booking_detail AS
 SELECT
   b.id,
@@ -22,7 +25,6 @@ SELECT
   b.title,
   b.activity,
   b.attendees,
-  b.notes_for_staff,
   b.start_time,
   b.end_time,
   b.final_status,
@@ -38,7 +40,8 @@ SELECT
   u.full_name    AS requester_name,
   u.email        AS requester_email,
   u.line_user_id AS requester_line_id,
-  u.department   AS requester_department
+  u.department   AS requester_department,
+  b.notes_for_staff
 FROM bookings b
 JOIN rooms r ON r.id = b.room_id
 JOIN users u ON u.id = b.requester_id;
