@@ -90,6 +90,14 @@ async function handleEvent(
       await replyText(replyToken, r);
       return;
     }
+    // ปุ่ม rich menu "ติดต่อสอบถาม" (text action) → ตอบข้อมูลผู้ดูแลระบบ
+    if (text === "ติดต่อสอบถาม") {
+      await replyText(
+        replyToken,
+        "📞 ติดต่อผู้ดูแลระบบ\nนายพิสิฐ เทียมเย็น\nโทร 089-8555668\nLINE ID: xmasball\nติดต่อได้ในเวลาราชการ"
+      );
+      return;
+    }
     await replyText(
       replyToken,
       "พิมพ์ /link ตามด้วยรหัส 6 หลักจากหน้าโปรไฟล์ เพื่อเชื่อมบัญชี"
@@ -97,14 +105,7 @@ async function handleEvent(
     return;
   }
 
-  // follow (เพิ่มเพื่อนครั้งแรก)
-  if (event.type === "follow" && replyToken) {
-    await replyText(
-      replyToken,
-      "ยินดีต้อนรับสู่ระบบจองห้องประชุม LPRU 🔔\nเชื่อมบัญชีโดยไปที่หน้าโปรไฟล์ในเว็บ กด \"เชื่อมต่อ LINE\" แล้วพิมพ์ /link ตามด้วยรหัส 6 หลัก"
-    );
-    return;
-  }
+  // follow (เพิ่มเพื่อนครั้งแรก) → ใช้ greeting message ของ OA แทน ไม่ตอบซ้ำจาก webhook
   // event อื่น (unfollow, sticker ฯลฯ) → เมิน
 }
 
