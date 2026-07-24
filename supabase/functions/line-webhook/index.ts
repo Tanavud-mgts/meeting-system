@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { verifyLineSignature, parsePostbackData, replyText } from "../_shared/lineClient.ts";
 import { handleApprovalPostback, handleLinkCommand } from "../_shared/lineApproval.ts";
+import { logIntegration } from "../_shared/integrationLog.ts";
 
 // line-webhook: verify_jwt=false (LINE เรียก, ใช้ signature แทน)
 // ต้องตอบ 200 เสมอยกเว้น signature ผิด (401) — กัน LINE retry ซ้ำ
@@ -43,7 +44,7 @@ Deno.serve(async (req: Request) => {
 interface LineEvent {
   type: string;
   replyToken?: string;
-  source?: { userId?: string };
+  source?: { userId?: string; type?: string; groupId?: string };
   postback?: { data: string };
   message?: { type: string; text?: string };
 }
@@ -91,6 +92,15 @@ async function handleEvent(
       replyToken,
       "ยินดีต้อนรับสู่ระบบจองห้องประชุม LPRU 🔔\nเชื่อมบัญชีโดยไปที่หน้าโปรไฟล์ในเว็บ กด \"เชื่อมต่อ LINE\" แล้วพิมพ์ /link ตามด้วยรหัส 6 หลัก"
     );
+    return;
+  }
+  // join: OA ถูกเชิญเข้ากลุ่ม/ห้อง → log groupId ให้ Admin คัดลอกไปตั้งค่าแม่บ้าน
+  if (event.type === "join" && event.source?.groupId) {
+    await logIntegration(client, {
+      service: "line",
+      status: "success",
+      payload: { kind: "group_join", groupId: event.source.groupId },
+    });
     return;
   }
   // event อื่น (unfollow, sticker ฯลฯ) → เมิน
