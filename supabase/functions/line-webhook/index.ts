@@ -81,7 +81,9 @@ async function handleEvent(
     return;
   }
 
-  // message
+  // message — webhook รับผิดชอบเฉพาะคำสั่ง /link เท่านั้น
+  // ข้อความอื่น (เช่นปุ่ม "ติดต่อสอบถาม") ปล่อยให้ OA Manager (การตอบกลับอัตโนมัติ/คีย์เวิร์ด)
+  // จัดการ เพื่อไม่ให้ตอบซ้ำ 2 ข้อความ
   if (event.type === "message" && event.message?.type === "text" && lineUserId && replyToken) {
     const text = (event.message.text ?? "").trim();
     const linkMatch = text.match(/^\/link\s+(\d{6})$/);
@@ -90,18 +92,14 @@ async function handleEvent(
       await replyText(replyToken, r);
       return;
     }
-    // ปุ่ม rich menu "ติดต่อสอบถาม" (text action) → ตอบข้อมูลผู้ดูแลระบบ
-    if (text === "ติดต่อสอบถาม") {
+    if (text.startsWith("/link")) {
       await replyText(
         replyToken,
-        "📞 ติดต่อผู้ดูแลระบบ\nนายพิสิฐ เทียมเย็น\nโทร 089-8555668\nLINE ID: xmasball\nติดต่อได้ในเวลาราชการ"
+        "รูปแบบไม่ถูกต้อง — พิมพ์ /link ตามด้วยรหัส 6 หลักจากหน้าโปรไฟล์"
       );
       return;
     }
-    await replyText(
-      replyToken,
-      "พิมพ์ /link ตามด้วยรหัส 6 หลักจากหน้าโปรไฟล์ เพื่อเชื่อมบัญชี"
-    );
+    // ข้อความอื่น → เงียบ (ให้ OA Manager จัดการ keyword auto-response เอง)
     return;
   }
 
