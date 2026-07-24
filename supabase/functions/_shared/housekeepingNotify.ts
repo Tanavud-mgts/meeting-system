@@ -1,4 +1,8 @@
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { formatThaiDate, formatThaiTimeRange } from "./notify.ts";
+import { countLinePushesThisMonth } from "./notify.ts";
+import { logIntegration } from "./integrationLog.ts";
+import { pushTextToGroup } from "./lineClient.ts";
 
 const TZ = "Asia/Bangkok";
 
@@ -133,4 +137,150 @@ export function shouldSendDigestNow(
   if (bangkokHour(nowIso) !== cfg.housekeeping_digest_hour) return false;
   if (cfg.housekeeping_digest_last_sent_on === bangkokDateString(nowIso)) return false;
   return true;
+}
+
+const DETAIL_COLS =
+  "id, ref_id, room_name, title, activity, attendees, start_time, end_time, requester_name, requester_department, notes_for_staff, current_step";
+
+interface HousekeepingConfigRow extends DigestGateConfig {}
+
+async function loadConfig(client: SupabaseClient): Promise<HousekeepingConfigRow | null> {
+  try {
+    const { data, error } = await client
+      .from("system_config")
+      .select(
+        "housekeeping_enabled, housekeeping_line_group_id, housekeeping_digest_hour, housekeeping_digest_last_sent_on"
+      )
+      .single();
+    if (error || !data) return null;
+    return data as HousekeepingConfigRow;
+  } catch (err) {
+    console.error("[housekeeping] loadConfig", err);
+    return null;
+  }
+}
+
+async function loadDetail(
+  client: SupabaseClient,
+  bookingId: string
+): Promise<(HousekeepingRow & { current_step: number }) | null> {
+  try {
+    const { data, error } = await client
+      .from("booking_detail")
+      .select(DETAIL_COLS)
+      .eq("id", bookingId)
+      .single();
+    if (error || !data) return null;
+    return data as HousekeepingRow & { current_step: number };
+  } catch (err) {
+    console.error("[housekeeping] loadDetail", err);
+    return null;
+  }
+}
+
+// ส่ง text เข้ากลุ่ม ถ้าเปิดใช้งาน + มี group id + quota ไม่เต็ม — log ทุกกรณี ไม่ throw
+async function sendToHousekeepingGroup(
+  client: SupabaseClient,
+  cfg: HousekeepingConfigRow,
+  text: string
+): Promise<void> {
+  if (!cfg.housekeeping_enabled || !cfg.housekeeping_line_group_id) return;
+  try {
+    const sent = await countLinePushesThisMonth(client);
+    if (sent >= 500) {
+      await logIntegration(client, {
+        service: "internal",
+        status: "success",
+        payload: { skipped: "line_quota", sent, target: "housekeeping" },
+      });
+      return;
+    }
+    await pushTextToGroup(cfg.housekeeping_line_group_id, text);
+    await logIntegration(client, {
+      service: "line",
+      status: "success",
+      payload: { kind: "push", target: "housekeeping" },
+    });
+  } catch (err) {
+    console.error("[housekeeping] sendToGroup", err);
+    await logIntegration(client, {
+      service: "line",
+      status: "failed",
+      payload: { kind: "push", target: "housekeeping" },
+      error_detail: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+export async function notifyHousekeepingApproved(
+  client: SupabaseClient,
+  bookingId: string
+): Promise<void> {
+  try {
+    const cfg = await loadConfig(client);
+    if (!cfg || !cfg.housekeeping_enabled || !cfg.housekeeping_line_group_id) return;
+    const d = await loadDetail(client, bookingId);
+    if (!d) return;
+    const near = isNearTerm(d.start_time, new Date().toISOString());
+    if (!near) return;
+    await sendToHousekeepingGroup(client, cfg, buildApprovedMessage(d, near));
+  } catch (err) {
+    console.error("[notifyHousekeepingApproved]", err);
+  }
+}
+
+export async function notifyHousekeepingCancelled(
+  client: SupabaseClient,
+  bookingId: string
+): Promise<void> {
+  try {
+    const cfg = await loadConfig(client);
+    if (!cfg || !cfg.housekeeping_enabled || !cfg.housekeeping_line_group_id) return;
+    const d = await loadDetail(client, bookingId);
+    if (!d) return;
+    // แจ้งยกเลิกเฉพาะ booking ที่เคยผ่าน chain ครบ (current_step === 3) — แม่บ้านเคยรับข้อมูลไปแล้ว
+    if (d.current_step !== 3) return;
+    const near = isNearTerm(d.start_time, new Date().toISOString());
+    if (!near) return;
+    await sendToHousekeepingGroup(client, cfg, buildCancelledMessage(d, near));
+  } catch (err) {
+    console.error("[notifyHousekeepingCancelled]", err);
+  }
+}
+
+export async function sendHousekeepingDigest(client: SupabaseClient): Promise<void> {
+  try {
+    const cfg = await loadConfig(client);
+    if (!cfg) return;
+    const nowIso = new Date().toISOString();
+    if (!shouldSendDigestNow(cfg, nowIso)) return;
+
+    const tomorrow = addDaysISODate(bangkokDateString(nowIso), 1);
+    const startBound = `${tomorrow}T00:00:00+07:00`;
+    const endBound = `${addDaysISODate(tomorrow, 1)}T00:00:00+07:00`;
+
+    const { data, error } = await client
+      .from("booking_detail")
+      .select(DETAIL_COLS)
+      .eq("final_status", "approved")
+      .gte("start_time", startBound)
+      .lt("start_time", endBound)
+      .order("start_time", { ascending: true });
+
+    if (error) {
+      console.error("[housekeeping] digest query", error);
+      return;
+    }
+
+    const rows = (data ?? []) as HousekeepingRow[];
+    await sendToHousekeepingGroup(client, cfg, buildDigestMessage(rows, startBound));
+
+    // guard กันส่งซ้ำวันนี้ (ทำหลังส่ง เพื่อ retry ได้ถ้าชั่วโมงยังไม่ผ่าน)
+    await client
+      .from("system_config")
+      .update({ housekeeping_digest_last_sent_on: bangkokDateString(nowIso) })
+      .eq("housekeeping_enabled", true);
+  } catch (err) {
+    console.error("[sendHousekeepingDigest]", err);
+  }
 }

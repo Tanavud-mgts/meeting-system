@@ -119,3 +119,92 @@ describe("shouldSendDigestNow", () => {
     expect(shouldSendDigestNow({ ...base, housekeeping_digest_last_sent_on: "2026-07-23" }, at17)).toBe(false);
   });
 });
+
+import { makeClient, type DbCallContext } from "./mockClient.ts";
+import {
+  notifyHousekeepingApproved,
+  notifyHousekeepingCancelled,
+  sendHousekeepingDigest,
+} from "./housekeepingNotify.ts";
+
+// booking_detail row ที่ approved + near-term (start วันนี้เทียบ now ด้านล่าง)
+const detailRow = (over: Record<string, unknown> = {}) => ({
+  id: "bk-1",
+  ref_id: "BK-20260724-001",
+  room_name: "ห้องสภา",
+  title: "ประชุม",
+  activity: "x",
+  attendees: 10,
+  start_time: new Date(Date.now() + 3 * 3600_000).toISOString(), // อีก 3 ชม. = วันนี้เกือบทุกกรณี
+  end_time: new Date(Date.now() + 5 * 3600_000).toISOString(),
+  requester_name: "สมชาย",
+  requester_department: "คณะครุ",
+  notes_for_staff: null,
+  current_step: 3,
+  ...over,
+});
+
+const enabledCfg = {
+  housekeeping_enabled: true,
+  housekeeping_line_group_id: "Cxxxx",
+  housekeeping_digest_hour: 17,
+  housekeeping_digest_last_sent_on: null,
+};
+
+describe("notifyHousekeepingApproved (gating)", () => {
+  it("ปิดใช้งาน → ไม่ส่ง (ไม่มี integration_health line push)", async () => {
+    const { client, calls } = makeClient((ctx: DbCallContext) => {
+      if (ctx.table === "booking_detail") return { data: detailRow(), error: null };
+      if (ctx.table === "system_config")
+        return { data: { ...enabledCfg, housekeeping_enabled: false }, error: null };
+      return { data: null, error: null };
+    });
+    await notifyHousekeepingApproved(client as never, "bk-1");
+    const linePush = calls.find(
+      (c) => c.table === "integration_health" && (c.payload as Record<string, unknown>)?.service === "line"
+    );
+    expect(linePush).toBeUndefined();
+  });
+
+  it("เปิด + near-term → log line push success เข้า integration_health", async () => {
+    const { client, calls } = makeClient((ctx: DbCallContext) => {
+      if (ctx.table === "booking_detail") return { data: detailRow(), error: null };
+      if (ctx.table === "system_config") return { data: enabledCfg, error: null };
+      if (ctx.table === "integration_health" && ctx.op === "select") return { data: [], error: null };
+      return { data: null, error: null };
+    });
+    // pushTextToGroup จะ throw (ไม่มี LINE_CHANNEL_ACCESS_TOKEN ใน test env) → คาดว่า log failed
+    await notifyHousekeepingApproved(client as never, "bk-1");
+    const lineLog = calls.find(
+      (c) => c.table === "integration_health" && (c.payload as Record<string, unknown>)?.service === "line"
+    );
+    expect(lineLog).toBeDefined(); // ยิงเข้า branch ส่ง (สำเร็จหรือ failed ก็ log)
+  });
+});
+
+describe("notifyHousekeepingCancelled (gating)", () => {
+  it("current_step != 3 (ไม่เคย approved) → ไม่ส่ง", async () => {
+    const { client, calls } = makeClient((ctx: DbCallContext) => {
+      if (ctx.table === "booking_detail") return { data: detailRow({ current_step: 1 }), error: null };
+      if (ctx.table === "system_config") return { data: enabledCfg, error: null };
+      return { data: null, error: null };
+    });
+    await notifyHousekeepingCancelled(client as never, "bk-1");
+    const lineLog = calls.find(
+      (c) => c.table === "integration_health" && (c.payload as Record<string, unknown>)?.service === "line"
+    );
+    expect(lineLog).toBeUndefined();
+  });
+});
+
+describe("sendHousekeepingDigest (time gate)", () => {
+  it("ยังไม่ถึงชั่วโมงส่ง → ไม่ query booking_detail", async () => {
+    const { client, calls } = makeClient((ctx: DbCallContext) => {
+      if (ctx.table === "system_config")
+        return { data: { ...enabledCfg, housekeeping_digest_hour: (new Date().getUTCHours() + 20) % 24 }, error: null };
+      return { data: [], error: null };
+    });
+    await sendHousekeepingDigest(client as never);
+    expect(calls.find((c) => c.table === "booking_detail")).toBeUndefined();
+  });
+});
