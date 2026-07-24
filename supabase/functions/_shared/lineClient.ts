@@ -120,3 +120,19 @@ export async function replyText(replyToken: string, text: string): Promise<void>
     throw new Error(`LINE reply failed: ${res.status} ${await res.text()}`);
   }
 }
+
+// ส่งข้อความ text เข้าห้องแชท/กลุ่ม (to = groupId) — ใช้กับกลุ่มแม่บ้าน
+// Transport ล้วน (ทดสอบตอน live เหมือน pushFlex) — throw เมื่อไม่ใช่ 2xx
+export async function pushTextToGroup(groupId: string, text: string): Promise<void> {
+  const res = await fetch(`${LINE_API}/push`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken()}`,
+    },
+    body: JSON.stringify({ to: groupId, messages: [{ type: "text", text }] }),
+  });
+  if (!res.ok) {
+    throw new Error(`LINE group push failed: ${res.status} ${await res.text()}`);
+  }
+}
