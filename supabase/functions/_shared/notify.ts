@@ -403,7 +403,7 @@ function startOfMonthISO(): string {
 }
 
 // นับ push (ไม่นับ reply) เดือนนี้ — พังก็คืน 0 (favor delivery)
-async function countLinePushesThisMonth(client: SupabaseClient): Promise<number> {
+export async function countLinePushesThisMonth(client: SupabaseClient): Promise<number> {
   try {
     const { count } = await client
       .from("integration_health")

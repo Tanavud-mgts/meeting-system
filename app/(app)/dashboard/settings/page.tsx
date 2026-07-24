@@ -43,6 +43,12 @@ export default function DashboardSettingsPage() {
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifError, setNotifError] = useState<string | null>(null);
   const [notifSuccess, setNotifSuccess] = useState<string | null>(null);
+  const [hkEnabled, setHkEnabled] = useState(false);
+  const [hkGroupId, setHkGroupId] = useState("");
+  const [hkDigestHour, setHkDigestHour] = useState("17");
+  const [hkSaving, setHkSaving] = useState(false);
+  const [hkError, setHkError] = useState<string | null>(null);
+  const [hkSuccess, setHkSuccess] = useState<string | null>(null);
 
   async function loadSettings() {
     setLoading(true);
@@ -54,7 +60,7 @@ export default function DashboardSettingsPage() {
       supabase
         .from("system_config")
         .select(
-          "admin_id, approver1_id, approver2_id, office_start_hour, office_end_hour, holidays, welpru_enabled, discord_enabled, line_enabled, notification_settings"
+          "admin_id, approver1_id, approver2_id, office_start_hour, office_end_hour, holidays, welpru_enabled, discord_enabled, line_enabled, notification_settings, housekeeping_enabled, housekeeping_line_group_id, housekeeping_digest_hour"
         )
         .single(),
       supabase
@@ -80,6 +86,9 @@ export default function DashboardSettingsPage() {
     setWelpruEnabled(configRes.data.welpru_enabled ?? false);
     setDiscordEnabled(configRes.data.discord_enabled ?? false);
     setLineEnabled(configRes.data.line_enabled ?? false);
+    setHkEnabled(configRes.data.housekeeping_enabled ?? false);
+    setHkGroupId(configRes.data.housekeeping_line_group_id ?? "");
+    setHkDigestHour(String(configRes.data.housekeeping_digest_hour ?? 17));
     const saved = (configRes.data.notification_settings ?? {}) as Record<
       string,
       { discord?: boolean; welpru?: boolean; line?: boolean; title?: string | null; body?: string | null }
@@ -217,6 +226,49 @@ export default function DashboardSettingsPage() {
       setNotifError("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setNotifSaving(false);
+    }
+  }
+
+  async function handleSaveHousekeeping() {
+    setHkSaving(true);
+    setHkError(null);
+    setHkSuccess(null);
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      setHkError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+      setHkSaving(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/update-housekeeping-settings`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            housekeeping_enabled: hkEnabled,
+            housekeeping_line_group_id: hkGroupId,
+            housekeeping_digest_hour: Number(hkDigestHour),
+          }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) {
+        setHkError(result.message ?? "บันทึกไม่สำเร็จ กรุณาลองใหม่");
+        return;
+      }
+      setHkSuccess("บันทึกการตั้งค่าแจ้งเตือนแม่บ้านสำเร็จ");
+      await loadSettings();
+    } catch {
+      setHkError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setHkSaving(false);
     }
   }
 
@@ -409,6 +461,57 @@ export default function DashboardSettingsPage() {
                 </label>
               ))}
             </div>
+            </EditorialCard.Section>
+          </EditorialCard>
+
+          <EditorialCard>
+            <EditorialCard.Section>
+            <SectionTitle>แจ้งเตือนกลุ่มแม่บ้าน (LINE)</SectionTitle>
+            <p className="mt-1 text-sm text-text-secondary">
+              ส่งสรุปห้องประชุมพรุ่งนี้ และแจ้งอนุมัติ/ยกเลิกของวันนี้–พรุ่งนี้ เข้ากลุ่ม LINE แม่บ้าน
+            </p>
+            <div className="mt-3 space-y-3">
+              <label className="flex items-center gap-2 text-sm text-text-primary">
+                <input
+                  type="checkbox"
+                  checked={hkEnabled}
+                  onChange={(e) => setHkEnabled(e.target.checked)}
+                />
+                เปิดใช้งานการแจ้งเตือนกลุ่มแม่บ้าน
+              </label>
+              <div>
+                <label className="text-sm text-text-secondary">LINE Group ID</label>
+                <input
+                  type="text"
+                  value={hkGroupId}
+                  onChange={(e) => setHkGroupId(e.target.value)}
+                  placeholder="เช่น Cxxxxxxxxxxxxxxxx"
+                  className="mt-1 w-full rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+                />
+                <p className="mt-1 text-xs text-text-muted">
+                  เชิญ LINE OA เข้ากลุ่มแม่บ้านก่อน แล้วดู Group ID ได้ที่หน้าเชื่อมต่อระบบ (Integration Health)
+                </p>
+              </div>
+              <div>
+                <label className="text-sm text-text-secondary">เวลาส่งสรุปพรุ่งนี้ (ชม.)</label>
+                <select
+                  value={hkDigestHour}
+                  onChange={(e) => setHkDigestHour(e.target.value)}
+                  className="mt-1 w-28 rounded-sm border border-neutral-300 bg-surface-field px-3 py-2 text-base text-text-primary"
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={String(h)}>
+                      {String(h).padStart(2, "0")}:00 น.
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {hkError && <p className="mt-3 text-sm text-danger-text">{hkError}</p>}
+            {hkSuccess && <p className="mt-3 text-sm text-success-text">{hkSuccess}</p>}
+            <Button onClick={handleSaveHousekeeping} disabled={hkSaving} className="mt-3">
+              {hkSaving ? "กำลังบันทึก..." : "บันทึกการตั้งค่าแม่บ้าน"}
+            </Button>
             </EditorialCard.Section>
           </EditorialCard>
 

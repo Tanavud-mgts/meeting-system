@@ -72,6 +72,13 @@ export function makeClient(responder: Responder): MockClient {
         state.filters.push([key, value]);
         return builder;
       },
+      lt(key: string, value: unknown) {
+        state.filters.push([key, value]);
+        return builder;
+      },
+      order(_key: string, _opts?: unknown) {
+        return builder;
+      },
       single() {
         state.single = true;
         return builder;

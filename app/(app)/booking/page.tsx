@@ -105,6 +105,7 @@ export default function BookingPage() {
 
   const [title, setTitle] = useState("");
   const [activity, setActivity] = useState("");
+  const [notesForStaff, setNotesForStaff] = useState("");
   const [attendees, setAttendees] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -234,6 +235,7 @@ export default function BookingPage() {
           attendees: Number(attendees),
           start_time: startISO,
           end_time: endISO,
+          notes_for_staff: notesForStaff,
         }),
       }
     );
@@ -495,6 +497,17 @@ export default function BookingPage() {
                   <textarea
                     value={activity}
                     onChange={(e) => setActivity(e.target.value)}
+                    className="rounded-sm border border-neutral-300 px-3 py-2"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1 text-sm text-text-secondary">
+                  หมายเหตุถึงแม่บ้าน (การจัดห้อง / อุปกรณ์ / น้ำ)
+                  <textarea
+                    value={notesForStaff}
+                    onChange={(e) => setNotesForStaff(e.target.value)}
+                    maxLength={500}
+                    placeholder="เช่น จัดโต๊ะรูปตัว U + เตรียมน้ำ 25 ที่ (ไม่บังคับ)"
                     className="rounded-sm border border-neutral-300 px-3 py-2"
                   />
                 </label>

@@ -10,6 +10,7 @@ interface CreateBookingRequest {
   attendees: number;
   start_time: string;
   end_time: string;
+  notes_for_staff?: string;
 }
 
 Deno.serve(
@@ -61,6 +62,10 @@ Deno.serve(
         attendees: body.attendees,
         start_time: body.start_time,
         end_time: body.end_time,
+        notes_for_staff:
+          body.notes_for_staff && body.notes_for_staff.trim()
+            ? body.notes_for_staff.trim().slice(0, 500)
+            : null,
       })
       .select("id, ref_id")
       .single();
