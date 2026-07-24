@@ -467,3 +467,10 @@ verify_jwt = true
 
 [functions.update-notification-settings]
 verify_jwt = true
+
+[functions.update-housekeeping-settings]
+verify_jwt = true
+
+# verify_jwt=true: pg_cron เรียกด้วย service_role Bearer (JWT ผ่าน)
+[functions.send-housekeeping-digest]
+verify_jwt = true
