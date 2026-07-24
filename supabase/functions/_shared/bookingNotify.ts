@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import type { ApprovalResult } from "./processApproval.ts";
 import { notifyAndLog, formatThaiDate, formatThaiTimeRange } from "./notify.ts";
+import { notifyHousekeepingApproved, notifyHousekeepingCancelled } from "./housekeepingNotify.ts";
 
 // step number → ฟิลด์ผู้อนุมัติใน system_config
 const STEP_FIELD: Record<number, "admin_id" | "approver1_id" | "approver2_id"> = {
@@ -112,6 +113,7 @@ export async function notifyApprovalOutcome(
         recipients: [{ userId: d.requester_id }],
         variables: base,
       });
+      await notifyHousekeepingApproved(client, bookingId);
       return;
     }
 
@@ -166,6 +168,7 @@ export async function notifyCancellationDecision(
         recipients: [{ userId: d.requester_id }],
         variables: baseVars(d),
       });
+      await notifyHousekeepingCancelled(client, bookingId);
     } else {
       await notifyAndLog(client, {
         eventKey: "cancellation_denied",
@@ -191,6 +194,7 @@ export async function notifyBookingCancelledByAdmin(
       recipients: [{ userId: d.requester_id }],
       variables: { ...baseVars(d), reason: reason.trim() || "ไม่ระบุ" },
     });
+    await notifyHousekeepingCancelled(client, bookingId);
   } catch (err) {
     console.error("[notifyBookingCancelledByAdmin]", err);
   }
