@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { verifyLineSignature, parsePostbackData, replyText } from "../_shared/lineClient.ts";
+import { verifyLineSignature, parsePostbackData, replyText, isGroupContext } from "../_shared/lineClient.ts";
 import { handleApprovalPostback, handleLinkCommand } from "../_shared/lineApproval.ts";
 import { logIntegration } from "../_shared/integrationLog.ts";
 
@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
 interface LineEvent {
   type: string;
   replyToken?: string;
-  source?: { userId?: string; type?: string; groupId?: string };
+  source?: { userId?: string; type?: string; groupId?: string; roomId?: string };
   postback?: { data: string };
   message?: { type: string; text?: string };
 }
@@ -56,6 +56,17 @@ async function handleEvent(
 ): Promise<void> {
   const lineUserId = event.source?.userId;
   const replyToken = event.replyToken;
+  const groupId = event.source?.groupId ?? event.source?.roomId;
+
+  // กลุ่ม/ห้อง: OA ไม่ตอบใดๆ (กัน noise) — ดัก groupId ตอน join หรือมีข้อความ (ครั้งแรกต่อกลุ่ม)
+  if (isGroupContext(event.source)) {
+    if (groupId && (event.type === "join" || event.type === "message")) {
+      await captureGroupId(client, groupId);
+    }
+    return;
+  }
+
+  // ── ต่อไปนี้เฉพาะแชท 1:1 ──
 
   // postback อนุมัติ/ปฏิเสธ
   if (event.type === "postback" && event.postback && lineUserId && replyToken) {
@@ -94,14 +105,26 @@ async function handleEvent(
     );
     return;
   }
-  // join: OA ถูกเชิญเข้ากลุ่ม/ห้อง → log groupId ให้ Admin คัดลอกไปตั้งค่าแม่บ้าน
-  if (event.type === "join" && event.source?.groupId) {
-    await logIntegration(client, {
-      service: "line",
-      status: "success",
-      payload: { kind: "group_join", groupId: event.source.groupId },
-    });
-    return;
-  }
   // event อื่น (unfollow, sticker ฯลฯ) → เมิน
+}
+
+// ดัก group ID เข้า integration_health — dedupe: log เฉพาะครั้งแรกต่อ groupId
+// (ป้องกัน log ซ้ำทุกข้อความในกลุ่ม) — ไม่ห่อ try/catch เอง ให้ handleEvent จับ error รวม
+async function captureGroupId(
+  // deno-lint-ignore no-explicit-any
+  client: any,
+  groupId: string
+): Promise<void> {
+  const { count } = await client
+    .from("integration_health")
+    .select("*", { count: "exact", head: true })
+    .eq("service", "line")
+    .eq("payload->>kind", "group_join")
+    .eq("payload->>groupId", groupId);
+  if ((count ?? 0) > 0) return;
+  await logIntegration(client, {
+    service: "line",
+    status: "success",
+    payload: { kind: "group_join", groupId },
+  });
 }

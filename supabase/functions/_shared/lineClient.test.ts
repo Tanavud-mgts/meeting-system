@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { verifyLineSignature, parsePostbackData, buildApprovalFlex } from "./lineClient.ts";
+import { verifyLineSignature, parsePostbackData, buildApprovalFlex, isGroupContext } from "./lineClient.ts";
 
 // helper: สร้างลายเซ็นที่ถูกต้องด้วยวิธีเดียวกับ implementation (HMAC-SHA256 → base64)
 async function sign(body: string, secret: string): Promise<string> {
@@ -39,6 +39,24 @@ describe("parsePostbackData", () => {
   });
   it("ไม่มี token → null", () => {
     expect(parsePostbackData("a=approve")).toBeNull();
+  });
+});
+
+describe("isGroupContext", () => {
+  it("source.type = group → true", () => {
+    expect(isGroupContext({ type: "group", groupId: "C123" })).toBe(true);
+  });
+  it("source.type = room → true", () => {
+    expect(isGroupContext({ type: "room", roomId: "R123" })).toBe(true);
+  });
+  it("มี groupId แต่ไม่มี type → true", () => {
+    expect(isGroupContext({ groupId: "C123" })).toBe(true);
+  });
+  it("แชท 1:1 (type=user, มีแต่ userId) → false", () => {
+    expect(isGroupContext({ type: "user" })).toBe(false);
+  });
+  it("source undefined → false", () => {
+    expect(isGroupContext(undefined)).toBe(false);
   });
 });
 
