@@ -61,18 +61,21 @@ describe("isNearTerm", () => {
 
 describe("buildDigestMessage", () => {
   const forDate = "2026-07-24T00:00:00+07:00";
-  it("ว่าง → ข้อความไม่มีการใช้ห้องประชุม", () => {
+  it("ว่าง → ข้อความไม่มีการใช้ห้องประชุม (ไม่มีวันที่ซ้ำ)", () => {
     const msg = buildDigestMessage([], forDate);
     expect(msg).toContain("ไม่มีการใช้ห้องประชุม");
+    // บรรทัดสุดท้ายเป็นวลีตรงๆ ไม่มีวันที่นำหน้า (กันวันที่ซ้ำ)
+    const lines = msg.split("\n");
+    expect(lines[lines.length - 1]).toBe("ไม่มีการใช้ห้องประชุม");
   });
-  it("มีรายการ → เรียงเวลา + ข้อมูลครบ", () => {
+  it("มีรายการ → เรียงเวลา + ข้อมูลครบ (ไม่มีรหัสอ้างอิง)", () => {
     const msg = buildDigestMessage([row()], forDate);
     expect(msg).toContain("1 รายการ");
     expect(msg).toContain("ห้องประชุมสภา ชั้น 8");
     expect(msg).toContain("25 คน");
     expect(msg).toContain("สมชาย ใจดี");
     expect(msg).toContain("คณะครุศาสตร์");
-    expect(msg).toContain("BK-20260724-001");
+    expect(msg).not.toContain("BK-20260724-001");
   });
   it("มี notes_for_staff → แสดงบรรทัด 📝, ถ้าไม่มี → ไม่แสดง", () => {
     expect(buildDigestMessage([row({ notes_for_staff: "จัดโต๊ะรูปตัว U" })], forDate)).toContain("📝 จัดโต๊ะรูปตัว U");
@@ -81,17 +84,19 @@ describe("buildDigestMessage", () => {
 });
 
 describe("buildApprovedMessage / buildCancelledMessage", () => {
-  it("approved → ป้าย ✅ + คำว่า (พรุ่งนี้) + notes", () => {
+  it("approved → ป้าย ✅ + คำว่า (พรุ่งนี้) + notes, ไม่มีรหัสอ้างอิง", () => {
     const msg = buildApprovedMessage(row({ notes_for_staff: "เตรียมน้ำ 25 ที่" }), "tomorrow");
     expect(msg).toContain("✅");
     expect(msg).toContain("พรุ่งนี้");
     expect(msg).toContain("เตรียมน้ำ 25 ที่");
+    expect(msg).not.toContain("BK-");
   });
-  it("cancelled → ป้าย ❌ + (วันนี้) + ข้อความไม่ต้องเตรียม", () => {
+  it("cancelled → ป้าย ❌ + (วันนี้) + ข้อความไม่ต้องเตรียม, ไม่มีรหัสอ้างอิง", () => {
     const msg = buildCancelledMessage(row(), "today");
     expect(msg).toContain("❌");
     expect(msg).toContain("วันนี้");
     expect(msg).toContain("ไม่ต้องเตรียมห้องนี้แล้ว");
+    expect(msg).not.toContain("BK-");
   });
 });
 
